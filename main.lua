@@ -1,17 +1,11 @@
--- Discord Rich Presence integration for mpv Media Player
---
--- Please consult the readme for information about usage and configuration:
--- https://github.com/cniw/mpv-discordRPC
-
-
 local options = require 'mp.options'
 local msg = require 'mp.msg'
-local json = require 'json'
+local gameSDK = require 'lua-discordGameSDK'
 
 -- set [options]
 local o = {
-	rpc_wrapper = "python-pypresence",
-	periodic_timer = 15,
+	rpc_wrapper = "lua-discordGameSDK",
+	periodic_timer = 5,
 	-- Recommendation value, to set `periodic_timer`:
 	-- value >= 1 second, if use lua-discordRPC,
 	-- value <= 15 second, because discord-rpc updates every 15 seconds.
@@ -49,48 +43,53 @@ local mpv_version = mp.get_property("mpv-version"):sub(5)
 -- set `startTime`
 local startTime = os.time(os.date("*t"))
 
+-- local client = baseclient.connect()
 local function main()
-	-- set `details`
-	local details = mp.get_property("media-title")
-	local metadataTitle = mp.get_property_native("metadata/by-key/Title")
-	local metadataArtist = mp.get_property_native("metadata/by-key/Artist")
-	local metadataAlbum = mp.get_property_native("metadata/by-key/Album")
-	if metadataTitle ~= nil then
-		details = metadataTitle
-	end
-	if metadataArtist ~= nil then
-		details = ("%s\nby %s"):format(details, metadataArtist)
-	end
-	if metadataAlbum ~= nil then
-		details = ("%s\non %s"):format(details, metadataAlbum)
-	end
-	if details == nil then
-		details = "No file"
-	end
-	-- set `state`, `smallImageKey`, and `smallImageText`
-	local state, smallImageKey, smallImageText
+	-- Default values
+	local presence = {
+		-- pid = 9999,
+		-- state = "Second line",
+		-- details = "Third line",
+		-- start = startTime,
+		-- ["end"] = startTime + 60,
+		-- large_image = "",
+		-- large_text = "",
+		-- small_image = "",
+		-- small_text = "",
+		-- party_id = "",
+		-- party_size = {},
+		-- join = "",
+		-- spectate = "",
+		-- match = "",
+		-- buttons = {},
+		-- instance = false
+	}
+
+	-- Set images
 	local idle = mp.get_property_bool("idle-active")
 	local coreIdle = mp.get_property_bool("core-idle")
 	local pausedFC = mp.get_property_bool("paused-for-cache")
 	local pause = mp.get_property_bool("pause")
 	local play = coreIdle and false or true
 	if idle then
-		state = "(Idle)"
-		smallImageKey = "player_stop"
-		smallImageText = "Idle"
+		presence["state"] = "(Idle)"
+		presence["small_image"] = "player_stop"
+		presence["small_text"] = "Idle"
 	elseif pausedFC then
-		state = ""
-		smallImageKey = "player_pause"
-		smallImageText = "Buffering"
+		presence["state"] = ""
+		presence["small_image"] = "player_pause"
+		presence["small_text"] = "Buffering"
 	elseif pause then
-		state = "(Paused)"
-		smallImageText = "Paused"
-		smallImageKey = "player_pause"
+		presence["state"] = "(Paused)"
+		presence["small_image"] = "player_pause"
+		presence["small_text"] = "Paused"
 	elseif play then
-		state = "(Playing at " .. mp.get_property_native("speed") .. "x)"
-		smallImageKey = "player_play"
-		smallImageText = "Playing"
+		presence["state"] = "(Playing at " .. mp.get_property_native("speed") .. "x)"
+		presence["small_image"] = "player_play"
+		presence["small_text"] = "Playing"
 	end
+
+	
 	if not idle then
 		-- set `playlist_info`
 		local playlist = ""
@@ -116,140 +115,98 @@ local function main()
 			loop = (" - Loop: %s"):format(loop)
 		end
 		-- state = state .. mp.get_property("options/term-status-msg")
-		smallImageText = ("%s%s%s"):format(smallImageText, playlist, loop)
+		presence["small_text"] = ("%s%s%s"):format(presence["small_text"], playlist, loop)
 	end
+
+	-- Set information as the file name, or if it exists, artist/album names
+	local url = mp.get_property("path")
+	local stream = mp.get_property("stream-path")
+	local mediaTitle = mp.get_property("media-title")
+	local metadataTitle = mp.get_property_native("metadata/by-key/Title")
+	local metadataArtist = mp.get_property_native("metadata/by-key/Artist")
+	local metadataAlbum = mp.get_property_native("metadata/by-key/Album")
+	
+	presence["details"] = mediaTitle
+	if metadataTitle ~= nil then
+		presence["details"] = metadataTitle
+	end
+	if metadataArtist ~= nil then
+		presence["details"] = ("%s\nby %s"):format(presence["details"], metadataArtist)
+	end
+	if metadataAlbum ~= nil then
+		presence["details"] = ("%s\non %s"):format(presence["details"], metadataAlbum)
+	end
+	if presence["details"] == nil then
+		presence["details"] = "No file"
+	end
+
+	if url ~= nil then
+		-- checking protocol: http, https
+		if string.match(url, "^https?://.*") ~= nil then
+			presence["large_image"] = "internet"
+			presence["large_text"] = "Streaming"
+		end
+
+		if string.match(mediaTitle, "Informatics") ~= nil then
+			presence["large_image"] = "informatics_logo"
+			presence["large_text"] = "UoE Informatics"
+
+		elseif string.match(url, "r1%-01%.m3u8") ~= nil then
+			presence["large_image"] = "radio"
+			presence["large_text"] = "Radio"
+			presence["details"] = "Listening to NHK R1"
+			state = "" -- hide (Playing 1x) because it is unnecessary
+
+		elseif string.match(url, "www.youtube.com/watch%?v=([a-zA-Z0-9-_]+)&?.*$") ~= nil or string.match(url, "youtu.be/([a-zA-Z0-9-_]+)&?.*$") ~= nil then
+			presence["large_image"] = "youtube"
+			presence["large_text"] = "YouTube"
+		end
+	end
+
+
 	-- set time
 	local timeNow = os.time(os.date("*t"))
 	local timeRemaining = os.time(os.date("*t", mp.get_property("playtime-remaining")))
 	local timeUp = timeNow + timeRemaining
-	-- set `largeImageKey` and `largeImageText`
-	local largeImageKey = "mpv"
-	local largeImageText = "mpv Media Player"
-	-- set `mpv_version`
-	if o.mpv_version == "yes" then
-		largeImageText = mpv_version
-	end
-	-- set `cover_art`
-	if o.cover_art == "yes" then
-		local catalogs = require("catalogs")
-		for i in pairs(catalogs) do
-			local title = catalogs[i].title
-			for j in pairs(title) do
-				local lower_title = title[j] ~= nil and title[j]:lower() or ""
-				local lower_details = details ~= nil and details:lower() or ""
-				if lower_details:find(lower_title, 1, true) ~= nil then
-					local number = catalogs[i].number
-					largeImageKey = ("coverart_%s"):format(number):gsub("[ /~]", "_"):lower()
-					largeImageText = title[j]
-				end
-			end
-			local album = catalogs[i].album
-			for j in pairs(album) do
-				local lower_album = album[j] ~= nil and album[j]:lower() or ""
-				local lower_metadataAlbum = metadataAlbum ~= nil and metadataAlbum:lower() or ""
-				if lower_album == lower_metadataAlbum then
-					local artist = catalogs[i].artist
-					for k in pairs(artist) do
-						local lower_artist = artist[k] ~= nil and artist[k]:lower() or ""
-						local lower_metadataArtist = metadataArtist ~= nil and metadataArtist:lower() or ""
-						if lower_artist == lower_metadataArtist then
-							local number = catalogs[i].number
-							largeImageKey = ("coverart_%s"):format(number):gsub("[ /~]", "_"):lower()
-							largeImageText = album[j]
-						end
-					end
-				end
-			end
-		end
-	end
-	-- streaming mode
-	local url = mp.get_property("path")
-	local mediaTitle = mp.get_property("media-title")
-	local stream = mp.get_property("stream-path")
-	if url ~= nil then
-		-- checking protocol: http, https
-		if string.match(url, "^https?://.*") ~= nil then
-			largeImageKey = "mpv_stream"
-			largeImageText = mediaTitle
-			details = url
-		end
-		-- checking site: YouTube, Crunchyroll, SoundCloud, LISTEN.moe
-		if string.match(mediaTitle, "Informatics") ~= nil then
-			largeImageKey = "informatics_logo"
-			largeImageText = "UoE Informatics"
-		elseif string.match(url, "r1%-01%.m3u8") ~= nil then
-			largeImageKey = "radio"
-			largeImageText = "Radio"
-			details = "Listening to NHK R1"
-			state = "" -- hide (Playing 1x) because it is unnecessary
-		-- elseif string.match(url, "www.youtube.com/watch%?v=([a-zA-Z0-9-_]+)&?.*$") ~= nil or string.match(url, "youtu.be/([a-zA-Z0-9-_]+)&?.*$") ~= nil then
-		-- 	largeImageKey = "informatics_logo"	-- alternative "youtube_big" or "youtube-2"
-		-- 	largeImageText = "YouTube"
-		-- elseif string.match(url, "www.crunchyroll.com/.+/.*-([0-9]+)??.*$") ~= nil then
-		-- 	largeImageKey = "crunchyroll"	-- alternative "crunchyroll_big"
-		-- 	largeImageText = "Crunchyroll"
-		-- elseif string.match(url, "soundcloud.com/.+/.*$") ~= nil then
-		-- 	largeImageKey = "soundcloud"	-- alternative "soundcloud_big"
-		-- 	largeImageText = "SoundCloud"
-		-- elseif string.match(url, "listen.moe/.*stream$") ~= nil or string.match(url, "listen.moe/.*opus$") ~= nil or string.match(url, "listen.moe/.*fallback$") ~= nil or string.match(url, "listen.moe/.*m3u$") ~= nil then
-		-- 	largeImageKey = "listen_moe"	-- alternative "listen_moe_big"
-		-- 	largeImageText = string.match(url, "kpop") ~= nil and "LISTEN.moe - KPOP" or "LISTEN.moe - JPOP"
-		end
-	end
-	-- set `presence`
-	local presence = {
-		state = state,
-		details = details,
-		-- startTimestamp = math.floor(startTime),
-		endTimestamp = math.floor(timeUp),
-		largeImageKey = largeImageKey,
-		largeImageText = largeImageText,
-		smallImageKey = smallImageKey,
-		smallImageText = smallImageText,
-	}
+	
+	-- default
+	presence["start"] = nil
+	presence["end"] = timeUp
+
 	if url ~= nil and stream == nil then
-		presence.state = "(Loading)"
-		presence.startTimestamp = math.floor(startTime)
-		presence.endTimestamp = nil
+		presence["state"] = "(Loading)"
+		presence["start"] = math.floor(startTime)
+		presence["end"] = nil
 	end
+
 	if url ~= nil and string.match(url, "%.m3u8") ~= nil then
-		presence.startTimestamp = math.floor(startTime)
-		presence.endTimestamp = nil
+		presence["start"] = math.floor(startTime)
+		presence["end"] = nil
 	end
+
 	if idle then
-		presence = {
-			state = presence.state,
-			details = presence.details,
-			startTimestamp = math.floor(startTime),
-			-- endTimestamp = presence.endTimestamp,
-			largeImageKey = presence.largeImageKey,
-			largeImageText = presence.largeImageText,
-			smallImageKey = presence.smallImageKey,
-			smallImageText = presence.smallImageText
-		}
+		presence["start"] = math.floor(startTime)
+		presence["end"] = nil
 	end
+
 	-- run Rich Presence
-	if tostring(o.rpc_wrapper) == "python-pypresence" then
-		-- set python path
-		local pythonPath
-		local lib
-		pythonPath = mp.get_script_directory() .. "/pypresence-wrapper.py"
+	-- set python path
+	local pythonPath
+	local lib
+	pythonPath = mp.get_script_directory() .. "/pypresence-wrapper.py"
 		
-		-- run Rich Presence with pypresence
-		local command = ('python "%s" "%s"'):format(
-			pythonPath,
-			json.encode(presence):gsub("\"", "\\\"")
-		)
-		msg.info(command)
-		mp.register_event('shutdown', function()
-			todo = "shutdown"
-			command = ('python "%s" "%s"'):format(pythonPath, todo)
-			io.popen(command)
-			os.exit()
-		end)
-		if o.active == "yes" then
-			io.popen(command)
-		end
+	-- run Rich Presence with pypresence
+	local command = ('python "%s" set "%s"'):format(
+		pythonPath,
+		json.encode(presence):gsub("\"", "\\\"")
+	)
+	mp.register_event('shutdown', function()
+		command = ('python "%s" shutdown'):format(pythonPath)
+		io.popen(command)
+		os.exit()
+	end)
+	if o.active == "yes" then
+		io.popen(command)
 	end
 end
 
@@ -259,7 +216,6 @@ msg.info(string.format(script_info.description))
 -- msg.info(string.format("Version: %s", script_info.version))
 
 -- print option values
-msg.verbose(string.format("rpc_wrapper    : %s", o.rpc_wrapper))
 msg.verbose(string.format("periodic_timer : %s", o.periodic_timer))
 msg.verbose(string.format("playlist_info  : %s", o.playlist_info))
 msg.verbose(string.format("loop_info      : %s", o.loop_info))
