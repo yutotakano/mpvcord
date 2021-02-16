@@ -195,8 +195,7 @@ local function main()
 	
 	if o.active == "yes" then
 		presence.details = presence.details:len() > 127 and presence.details:sub(1, 127) or presence.details
-		-- app = gameSDK.updatePresence(app, presence)
-		-- gameSDK.runCallbacks()
+		app = gameSDK.updatePresence(app, presence)
 	else
 		-- gameSDK.shutdown()
 	end

@@ -845,12 +845,12 @@ function discordGameSDK.initialize(clientId)
     branch = branchPtr[0]
     print("Detected Discord running on branch: " .. ffi.string(branch))
 
-    while(true)
-    do
-        discordGameSDK.runCallbacks(app.core)
-    end
+    -- while(true)
+    -- do
+    --     discordGameSDK.runCallbacks(app.core)
+    -- end
     return app
-    -- discordGameSDK.runCallbacks()
+    -- discordGameSDK.runCallbacks(app.core)
 
 end
 
@@ -928,11 +928,13 @@ function discordGameSDK.updatePresence(app, presence)
     -- app.users.get_current_user(app.users, user)
     -- unpackDiscordUser(user)
 
-    local activityPtr = ffi.new("struct DiscordActivity*", activity)
+    local activityPtr = ffi.new("struct DiscordActivity[1]", activity)
+    ffi.C.memset(activityPtr, 0, ffi.sizeof(activity))
     
-    -- discordGameSDK.updateActivity(app.activities, activityPtr, app.core)
+    print(app)
+    discordGameSDK.updateActivity(app.activities, activityPtr, app.core)
 
-    -- discordGameSDK.runCallbacks(app.core)
+    discordGameSDK.runCallbacks(app.core)
 
     print("more test")
     
