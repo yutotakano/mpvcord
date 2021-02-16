@@ -191,33 +191,13 @@ local function main()
 		presence["end"] = nil
 	end
 
-	-- run Rich Presence
-	
+	-- set game activity
 	if o.active == "yes" then
 		presence.details = presence.details:len() > 127 and presence.details:sub(1, 127) or presence.details
 		app = gameSDK.updatePresence(app, presence)
 	else
 		-- gameSDK.shutdown()
 	end
-
-
-	-- local pythonPath
-	-- local lib
-	-- pythonPath = mp.get_script_directory() .. "/pypresence-wrapper.py"
-		
-	-- -- run Rich Presence with pypresence
-	-- local command = ('python "%s" set "%s"'):format(
-	-- 	pythonPath,
-	-- 	json.encode(presence):gsub("\"", "\\\"")
-	-- )
-	-- mp.register_event('shutdown', function()
-	-- 	command = ('python "%s" shutdown'):format(pythonPath)
-	-- 	io.popen(command)
-	-- 	os.exit()
-	-- end)
-	-- if o.active == "yes" then
-	-- 	io.popen(command)
-	-- end
 end
 
 -- print script info

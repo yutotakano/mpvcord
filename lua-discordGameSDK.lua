@@ -204,8 +204,8 @@ struct DiscordUser {
 };
 
 struct DiscordOAuth2Token {
-  char* access_token; /* max size 128 */
-  char* scopes; /* max size 1024 */
+  char access_token[128];
+  char scopes[1024];
   DiscordTimestamp expires;
 };
 
@@ -222,49 +222,49 @@ struct DiscordImageDimensions {
 
 
 struct DiscordActivityTimestamps {
-    DiscordTimestamp start;
-    DiscordTimestamp end;
+  DiscordTimestamp start;
+  DiscordTimestamp end;
 };
 
 struct DiscordActivityAssets {
-    const char* large_image; /* max 128 bytes */
-    const char* large_text; /* max 128 bytes */
-    const char* small_image; /* max 128 bytes */
-    const char* small_text; /* max 128 bytes */
+  char large_image[128];
+  char large_text[128];
+  char small_image[128];
+  char small_text[128];
 };
 
 struct DiscordPartySize {
-    int32_t current_size;
-    int32_t max_size;
+  int32_t current_size;
+  int32_t max_size;
 };
 
 struct DiscordActivityParty {
-    const char* id; /* max 128 bytes */
-    struct DiscordPartySize size;
+  char id[128];
+  struct DiscordPartySize size;
 };
 
 struct DiscordActivitySecrets {
-    const char* match; /* max 128 bytes */
-    const char* join; /* max 128 bytes */
-    const char* spectate; /* max 128 bytes */
+  char match[128];
+  char join[128];
+  char spectate[128];
 };
 
 struct DiscordActivity {
-    enum EDiscordActivityType type;
-    int64_t application_id;
-    const char* name; /* max 128 bytes */
-    const char* state; /* max 128 bytes */
-    const char* details; /* max 128 bytes */
-    struct DiscordActivityTimestamps timestamps;
-    struct DiscordActivityAssets assets;
-    struct DiscordActivityParty party;
-    struct DiscordActivitySecrets secrets;
-    bool instance;
+  enum EDiscordActivityType type;
+  int64_t application_id;
+  char name[128];
+  char state[128];
+  char details[128];
+  struct DiscordActivityTimestamps timestamps;
+  struct DiscordActivityAssets assets;
+  struct DiscordActivityParty party;
+  struct DiscordActivitySecrets secrets;
+  bool instance;
 };
 
 struct DiscordPresence {
-    enum EDiscordStatus status;
-    struct DiscordActivity activity;
+  enum EDiscordStatus status;
+  struct DiscordActivity activity;
 };
 
 struct DiscordRelationship {
@@ -283,7 +283,7 @@ struct DiscordLobby {
 };
 
 struct DiscordFileStat {
-  const char* filename; /* max 260 bytes */
+  const char filename[260];
   uint64_t size;
   uint64_t last_modified;
 };
@@ -296,19 +296,19 @@ struct DiscordEntitlement {
 
 struct DiscordSkuPrice {
   uint32_t amount;
-  const char* currency; /* max 16 bytes */
+  const char currency[16];
 };
 
 struct DiscordSku {
   DiscordSnowflake id;
   enum EDiscordSkuType type;
-  const char* name; /* max 256 bytes */
+  const char name[256];
   struct DiscordSkuPrice price;
 };
 
 struct DiscordInputMode {
   enum EDiscordInputModeType type;
-  const char* shortcut; /* max 256 bytes */
+  const char shortcut[256];
 };
 
 struct DiscordUserAchievement {
@@ -701,69 +701,20 @@ local function DISCORD_REQUIRE(x)
     end
 end
 
-local function unpackDiscordUser(request)
-    print(request)
-    print(ffi.string(request.username))
-    -- return request.id, ffi.string(request.username),
-    --     ffi.string(request.discriminator), ffi.string(request.avatar)
-end
-
-local on_user_updated = ffi.cast("onUserUpdatedPtr", function(data) 
-  print("pog hi")
-    print(ffi.string(data))
+local on_user_updated = ffi.cast("onUserUpdatedPtr", function(data)
+  local appPtr = ffi.cast("struct Application*", data)
+  local app = appPtr[0]
+  local user = ffi.new("struct DiscordUser")
+  local userPtr = ffi.new("struct DiscordUser[1]", user)
+  app.users.get_current_user(app.users, userPtr)
+  user = userPtr[0]
+  print("Displaying Discord Status on user: " .. ffi.string(user.username))
 end)
-
--- callback proxies
--- note: callbacks are not JIT compiled (= SLOW), try to avoid doing performance critical tasks in them
--- luajit.org/ext_ffi_semantics.html
--- local ready_proxy = ffi.cast("readyPtr", function(request)
---     if discordGameSDK.ready then
---         discordGameSDK.ready(unpackDiscordUser(request))
---     end
--- end)
-
--- local disconnected_proxy = ffi.cast("disconnectedPtr", function(errorCode, message)
---     if discordGameSDK.disconnected then
---         discordGameSDK.disconnected(errorCode, ffi.string(message))
---     end
--- end)
-
--- local errored_proxy = ffi.cast("erroredPtr", function(errorCode, message)
---     if discordGameSDK.errored then
---         discordGameSDK.errored(errorCode, ffi.string(message))
---     end
--- end)
-
--- local joinGame_proxy = ffi.cast("joinGamePtr", function(joinSecret)
---     if discordGameSDK.joinGame then
---         discordGameSDK.joinGame(ffi.string(joinSecret))
---     end
--- end)
-
--- local spectateGame_proxy = ffi.cast("spectateGamePtr", function(spectateSecret)
---     if discordGameSDK.spectateGame then
---         discordGameSDK.spectateGame(ffi.string(spectateSecret))
---     end
--- end)
-
-local oldffistring = ffi.string
-ffi.string = function(data) 
-    if data ~= nil then
-        return oldffistring(data)
-    else
-        return nil
-    end
-end
 
 local loggerCallback = ffi.cast("loggerPtr", function (data, level, message)
   appPtr = ffi.cast("struct Application*", data)
-    print(string.format("aaaaaaaaaaaaaaaa: %s %s %s", tostring(level), ffi.string(message), appPtr.core))
+  print(string.format("Discord reported an error of severity %s: %s", tostring(level), ffi.string(message)))
 end)
-
-local on_oauth_2_token = ffi.cast("onOAuth2Ptr", function (data, result, token)
-  print("omg")
-end)
-
 
 -- Helper function to make sure the input is a given type
 function checkArg(arg, argType, argName, func, maybeNil)
@@ -825,32 +776,31 @@ function discordGameSDK.initialize(clientId)
 
     DISCORD_REQUIRE(libGameSDK.DiscordCreate(libGameSDK.DISCORD_VERSION, paramsPtr, corePtrPtr))
 
-    -- set the core as the updated one, since pass by
-    -- reference doesn't work
-    app.core = corePtrPtr[0]
+    -- Since pass by reference kinda doesn't work but kinda does,
+    -- we operate on the pointer's point. This makes sure that
+    -- param.event_data is also updated, so we can access
+    -- app.users in any event callback.
+    -- Setting app = appPtr[0] here won't work.
+    appPtr[0].core = corePtrPtr[0]
 
-    app.core.set_log_hook(app.core, libGameSDK.DiscordLogLevel_Debug, appPtr, loggerCallback)
+    appPtr[0].core.set_log_hook(appPtr[0].core, libGameSDK.DiscordLogLevel_Debug, appPtr, loggerCallback)
 
-    app.activities = app.core[0].get_activity_manager(app.core)
-    app.application = app.core[0].get_application_manager(app.core)
-    app.users = app.core[0].get_user_manager(app.core)
+    appPtr[0].activities = appPtr[0].core[0].get_activity_manager(appPtr[0].core)
+    appPtr[0].application = appPtr[0].core[0].get_application_manager(appPtr[0].core)
+    appPtr[0].users = appPtr[0].core[0].get_user_manager(appPtr[0].core)
 
-    -- app.application[0].get_oauth2_token(app.application, appPtr, on_oauth_2_token)
+    -- Finally set app
+    app = appPtr[0]
     
     local branch = ffi.new("DiscordBranch")
-    ffi.C.memset(branch, 0, 2)
     local branchPtr = ffi.new("DiscordBranch[1]", branch)
     ffi.C.memset(branchPtr, 0, ffi.sizeof(branch))
     app.application.get_current_branch(app.application, branchPtr)
     branch = branchPtr[0]
+
     print("Detected Discord running on branch: " .. ffi.string(branch))
 
-    -- while(true)
-    -- do
-    --     discordGameSDK.runCallbacks(app.core)
-    -- end
     return app
-    -- discordGameSDK.runCallbacks(app.core)
 
 end
 
@@ -863,10 +813,7 @@ function discordGameSDK.runCallbacks(core)
 end
 
 function discordGameSDK.updateActivity(activities, activity, core)
-  print(activities)
-  print(activity)
-  print(core)
-    activities.update_activity(activities, activity, core, updateActivityCallback)
+  activities.update_activity(activities, activity, core, updateActivityCallback)
 end
 
 local updateActivityCallback = ffi.cast("callbackPtr", function(callback_data, discord_result)
@@ -918,25 +865,18 @@ function discordGameSDK.updatePresence(app, presence)
     -- checkIntArg(presence.instance, 8, "presence.instance", func, true)
 
     local activity = ffi.new("struct DiscordActivity")
-    activity.type = libGameSDK.DiscordActivityType_Playing
+    local activityPtr = ffi.new("struct DiscordActivity[1]", activity)
+    ffi.C.memset(activityPtr, 0, ffi.sizeof(activity))
+
+    activity.type = libGameSDK.DiscordActivityType_Watching
     activity.details = "testing"
     activity.state = "testing"
     activity.assets.large_image = "radio"
     activity.assets.large_text = "listening here"
 
-    -- local user = ffi.new("struct DiscordUser")
-    -- app.users.get_current_user(app.users, user)
-    -- unpackDiscordUser(user)
-
-    local activityPtr = ffi.new("struct DiscordActivity[1]", activity)
-    ffi.C.memset(activityPtr, 0, ffi.sizeof(activity))
-    
-    print(app)
+    activityPtr[0] = activity
     discordGameSDK.updateActivity(app.activities, activityPtr, app.core)
-
     discordGameSDK.runCallbacks(app.core)
-
-    print("more test")
     
     return app
     -- local cpresence = ffi.new("struct DiscordRichPresence")
@@ -963,22 +903,10 @@ function discordGameSDK.clearPresence()
     libGameSDK.Discord_ClearPresence()
 end
 
-local replyMap = {
-    no = 0,
-    yes = 1,
-    ignore = 2
-}
-
--- maybe let reply take ints too (0, 1, 2) and add constants to the module
-function discordGameSDK.respond(userId, reply)
-    checkStrArg(userId, nil, "userId", "discordGameSDK.respond")
-    assert(replyMap[reply], "Argument 'reply' to discordGameSDK.respond has to be one of \"yes\", \"no\" or \"ignore\"")
-    libGameSDK.Discord_Respond(userId, replyMap[reply])
-end
-
 -- garbage collection callback
 getmetatable(discordGameSDK.gcDummy).__gc = function()
-    discordGameSDK.shutdown()
+  print("testing")  
+  -- discordGameSDK.shutdown()
     -- ready_proxy:free()
     -- disconnected_proxy:free()
     -- errored_proxy:free()
