@@ -184,24 +184,23 @@ typedef int32_t DiscordVersion;
 typedef int64_t DiscordSnowflake;
 typedef int64_t DiscordTimestamp;
 typedef DiscordSnowflake DiscordUserId;
-typedef char* DiscordLocale; /* max size 128 */
-typedef char* DiscordBranch; /* max size 4096 */
+typedef char DiscordLocale[128];
+typedef char DiscordBranch[4096];
 typedef DiscordSnowflake DiscordLobbyId;
-typedef char* DiscordLobbySecret; /* max size 128 */
-typedef char* DiscordMetadataKey; /* max size 256 */
-typedef char* DiscordMetadataValue; /* max size 4096 */
+typedef char DiscordLobbySecret[128];
+typedef char DiscordMetadataKey[256];
+typedef char DiscordMetadataValue[4096];
 typedef uint64_t DiscordNetworkPeerId;
 typedef uint8_t DiscordNetworkChannelId;
-typedef char* DiscordPath; /* max size 4096 */
-typedef char* DiscordDateTime; /* max size 64 */
-
+typedef char DiscordPath[4096];
+typedef char DiscordDateTime[64];
 
 struct DiscordUser {
-    DiscordUserId id;
-    char* username; /* max 256 bytes */
-    char* discriminator; /* max 8 bytes */
-    char* avatar; /* max 128 bytes */
-    bool bot;
+  DiscordUserId id;
+  char username[256];
+  char discriminator[8];
+  char avatar[128];
+  bool bot;
 };
 
 struct DiscordOAuth2Token {
@@ -710,7 +709,8 @@ local function unpackDiscordUser(request)
 end
 
 local on_user_updated = ffi.cast("onUserUpdatedPtr", function(data) 
-    print(ffi.string(data.username))
+  print("pog hi")
+    print(ffi.string(data))
 end)
 
 -- callback proxies
@@ -835,7 +835,7 @@ function discordGameSDK.initialize(clientId)
     app.application = app.core[0].get_application_manager(app.core)
     app.users = app.core[0].get_user_manager(app.core)
 
-    app.application[0].get_oauth2_token(app.application, appPtr, on_oauth_2_token)
+    -- app.application[0].get_oauth2_token(app.application, appPtr, on_oauth_2_token)
     
     local branch = ffi.new("DiscordBranch")
     ffi.C.memset(branch, 0, 2)
@@ -843,16 +843,12 @@ function discordGameSDK.initialize(clientId)
     ffi.C.memset(branchPtr, 0, ffi.sizeof(branch))
     app.application.get_current_branch(app.application, branchPtr)
     branch = branchPtr[0]
-    print(branchPtr)
-    print("before")
-    print(branch[0])
-    print(ffi.string(branch))
-    print("after")
+    print("Detected Discord running on branch: " .. ffi.string(branch))
 
-    -- while(true)
-    -- do
-    --     discordGameSDK.runCallbacks(app.core)
-    -- end
+    while(true)
+    do
+        discordGameSDK.runCallbacks(app.core)
+    end
     return app
     -- discordGameSDK.runCallbacks()
 
