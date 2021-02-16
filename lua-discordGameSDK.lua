@@ -1,7 +1,11 @@
 local ffi = require "ffi"
-local discordGameSDKlib = ffi.load("discord_game_sdk")
+local libGameSDK = ffi.load("discord_game_sdk")
 
 ffi.cdef[[
+void free(void *ptr);
+void *malloc(size_t size);
+void *memset(void *s, int c, size_t n);
+
 enum{DISCORD_VERSION = 2};
 enum{DISCORD_APPLICATION_MANAGER_VERSION = 1};
 enum{DISCORD_USER_MANAGER_VERSION = 1};
@@ -192,7 +196,7 @@ typedef char* DiscordPath; /* max size 4096 */
 typedef char* DiscordDateTime; /* max size 64 */
 
 
-typedef struct DiscordUser {
+struct DiscordUser {
     DiscordUserId id;
     char* username; /* max 256 bytes */
     char* discriminator; /* max 8 bytes */
@@ -200,53 +204,53 @@ typedef struct DiscordUser {
     bool bot;
 };
 
-typedef struct DiscordOAuth2Token {
+struct DiscordOAuth2Token {
   char* access_token; /* max size 128 */
   char* scopes; /* max size 1024 */
   DiscordTimestamp expires;
 };
 
-typedef struct DiscordImageHandle {
+struct DiscordImageHandle {
   enum EDiscordImageType type;
   int64_t id;
   uint32_t size;
 };
 
-typedef struct DiscordImageDimensions {
+struct DiscordImageDimensions {
   uint32_t width;
   uint32_t height;
 };
 
 
-typedef struct DiscordActivityTimestamps {
+struct DiscordActivityTimestamps {
     DiscordTimestamp start;
     DiscordTimestamp end;
-} DiscordActivityTimestamps;
+};
 
-typedef struct DiscordActivityAssets {
+struct DiscordActivityAssets {
     const char* large_image; /* max 128 bytes */
     const char* large_text; /* max 128 bytes */
     const char* small_image; /* max 128 bytes */
     const char* small_text; /* max 128 bytes */
-} DiscordActivityAssets;
+};
 
-typedef struct DiscordPartySize {
+struct DiscordPartySize {
     int32_t current_size;
     int32_t max_size;
-} DiscordPartySize;
+};
 
-typedef struct DiscordActivityParty {
+struct DiscordActivityParty {
     const char* id; /* max 128 bytes */
     struct DiscordPartySize size;
-} DiscordActivityParty;
+};
 
-typedef struct DiscordActivitySecrets {
+struct DiscordActivitySecrets {
     const char* match; /* max 128 bytes */
     const char* join; /* max 128 bytes */
     const char* spectate; /* max 128 bytes */
-} DiscordActivitySecrets;
+};
 
-typedef struct DiscordActivity {
+struct DiscordActivity {
     enum EDiscordActivityType type;
     int64_t application_id;
     const char* name; /* max 128 bytes */
@@ -257,20 +261,20 @@ typedef struct DiscordActivity {
     struct DiscordActivityParty party;
     struct DiscordActivitySecrets secrets;
     bool instance;
-} DiscordActivity;
+};
 
-typedef struct DiscordPresence {
+struct DiscordPresence {
     enum EDiscordStatus status;
     struct DiscordActivity activity;
-} DiscordPresence;
+};
 
-typedef struct DiscordRelationship {
+struct DiscordRelationship {
   enum EDiscordRelationshipType type;
   struct DiscordUser user;
   struct DiscordPresence presence;
 };
 
-typedef struct DiscordLobby {
+struct DiscordLobby {
   DiscordLobbyId id;
   enum EDiscordLobbyType type;
   DiscordUserId owner_id;
@@ -279,43 +283,43 @@ typedef struct DiscordLobby {
   bool locked;
 };
 
-typedef struct DiscordFileStat {
+struct DiscordFileStat {
   const char* filename; /* max 260 bytes */
   uint64_t size;
   uint64_t last_modified;
 };
 
-typedef struct DiscordEntitlement {
+struct DiscordEntitlement {
   DiscordSnowflake id;
   enum EDiscordEntitlementType type;
   DiscordSnowflake sku_id;
 };
 
-typedef struct DiscordSkuPrice {
+struct DiscordSkuPrice {
   uint32_t amount;
   const char* currency; /* max 16 bytes */
 };
 
-typedef struct DiscordSku {
+struct DiscordSku {
   DiscordSnowflake id;
   enum EDiscordSkuType type;
   const char* name; /* max 256 bytes */
   struct DiscordSkuPrice price;
 };
 
-typedef struct DiscordInputMode {
+struct DiscordInputMode {
   enum EDiscordInputModeType type;
   const char* shortcut; /* max 256 bytes */
 };
 
-typedef struct DiscordUserAchievement {
+struct DiscordUserAchievement {
   DiscordSnowflake user_id;
   DiscordSnowflake achievement_id;
   uint8_t percent_complete;
   DiscordDateTime unlocked_at;
 };
 
-typedef struct IDiscordLobbyTransaction {
+struct IDiscordLobbyTransaction {
   enum EDiscordResult (*set_type)(struct IDiscordLobbyTransaction* lobby_transaction, enum EDiscordLobbyType type);
   enum EDiscordResult (*set_owner)(struct IDiscordLobbyTransaction* lobby_transaction, DiscordUserId owner_id);
   enum EDiscordResult (*set_capacity)(struct IDiscordLobbyTransaction* lobby_transaction, uint32_t capacity);
@@ -324,12 +328,12 @@ typedef struct IDiscordLobbyTransaction {
   enum EDiscordResult (*set_locked)(struct IDiscordLobbyTransaction* lobby_transaction, bool locked);
 };
 
-typedef struct IDiscordLobbyMemberTransaction {
+struct IDiscordLobbyMemberTransaction {
   enum EDiscordResult (*set_metadata)(struct IDiscordLobbyMemberTransaction* lobby_member_transaction, DiscordMetadataKey key, DiscordMetadataValue value);
   enum EDiscordResult (*delete_metadata)(struct IDiscordLobbyMemberTransaction* lobby_member_transaction, DiscordMetadataKey key);
 };
 
-typedef struct IDiscordLobbySearchQuery {
+struct IDiscordLobbySearchQuery {
   enum EDiscordResult (*filter)(struct IDiscordLobbySearchQuery* lobby_search_query, DiscordMetadataKey key, enum EDiscordLobbySearchComparison comparison, enum EDiscordLobbySearchCast cast, DiscordMetadataValue value);
   enum EDiscordResult (*sort)(struct IDiscordLobbySearchQuery* lobby_search_query, DiscordMetadataKey key, enum EDiscordLobbySearchCast cast, DiscordMetadataValue value);
   enum EDiscordResult (*limit)(struct IDiscordLobbySearchQuery* lobby_search_query, uint32_t limit);
@@ -338,7 +342,7 @@ typedef struct IDiscordLobbySearchQuery {
 
 typedef void* IDiscordApplicationEvents;
 
-typedef struct IDiscordApplicationManager {
+struct IDiscordApplicationManager {
     void (*validate_or_exit)(struct IDiscordApplicationManager* manager, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
     void (*get_current_locale)(struct IDiscordApplicationManager* manager, DiscordLocale* locale);
     void (*get_current_branch)(struct IDiscordApplicationManager* manager, DiscordBranch* branch);
@@ -346,11 +350,11 @@ typedef struct IDiscordApplicationManager {
     void (*get_ticket)(struct IDiscordApplicationManager* manager, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, const char* data));
 };
 
-typedef struct IDiscordUserEvents {
+struct IDiscordUserEvents {
     void (*on_current_user_update)(void* event_data);
 };
 
-typedef struct IDiscordUserManager {
+struct IDiscordUserManager {
   enum EDiscordResult (*get_current_user)(struct IDiscordUserManager* manager, struct DiscordUser* current_user);
   void (*get_user)(struct IDiscordUserManager* manager, DiscordUserId user_id, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, struct DiscordUser* user));
   enum EDiscordResult (*get_current_user_premium_type)(struct IDiscordUserManager* manager, enum EDiscordPremiumType* premium_type);
@@ -359,20 +363,20 @@ typedef struct IDiscordUserManager {
 
 typedef void* IDiscordImageEvents;
 
-typedef struct IDiscordImageManager {
+struct IDiscordImageManager {
   void (*fetch)(struct IDiscordImageManager* manager, struct DiscordImageHandle handle, bool refresh, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, struct DiscordImageHandle handle_result));
   enum EDiscordResult (*get_dimensions)(struct IDiscordImageManager* manager, struct DiscordImageHandle handle, struct DiscordImageDimensions* dimensions);
   enum EDiscordResult (*get_data)(struct IDiscordImageManager* manager, struct DiscordImageHandle handle, uint8_t* data, uint32_t data_length);
 };
 
-typedef struct IDiscordActivityEvents {
+struct IDiscordActivityEvents {
   void (*on_activity_join)(void* event_data, const char* secret);
   void (*on_activity_spectate)(void* event_data, const char* secret);
   void (*on_activity_join_request)(void* event_data, struct DiscordUser* user);
   void (*on_activity_invite)(void* event_data, enum EDiscordActivityActionType type, struct DiscordUser* user, struct DiscordActivity* activity);
 };
 
-typedef struct IDiscordActivityManager {
+struct IDiscordActivityManager {
   enum EDiscordResult (*register_command)(struct IDiscordActivityManager* manager, const char* command);
   enum EDiscordResult (*register_steam)(struct IDiscordActivityManager* manager, uint32_t steam_id);
   void (*update_activity)(struct IDiscordActivityManager* manager, struct DiscordActivity* activity, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
@@ -382,19 +386,19 @@ typedef struct IDiscordActivityManager {
   void (*accept_invite)(struct IDiscordActivityManager* manager, DiscordUserId user_id, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
 };
 
-typedef struct IDiscordRelationshipEvents {
+struct IDiscordRelationshipEvents {
   void (*on_refresh)(void* event_data);
   void (*on_relationship_update)(void* event_data, struct DiscordRelationship* relationship);
 };
 
-typedef struct IDiscordRelationshipManager {
+struct IDiscordRelationshipManager {
   void (*filter)(struct IDiscordRelationshipManager* manager, void* filter_data, bool (*filter)(void* filter_data, struct DiscordRelationship* relationship));
   enum EDiscordResult (*count)(struct IDiscordRelationshipManager* manager, int32_t* count);
   enum EDiscordResult (*get)(struct IDiscordRelationshipManager* manager, DiscordUserId user_id, struct DiscordRelationship* relationship);
   enum EDiscordResult (*get_at)(struct IDiscordRelationshipManager* manager, uint32_t index, struct DiscordRelationship* relationship);
 };
 
-typedef struct IDiscordLobbyEvents {
+struct IDiscordLobbyEvents {
   void (*on_lobby_update)(void* event_data, int64_t lobby_id);
   void (*on_lobby_delete)(void* event_data, int64_t lobby_id, uint32_t reason);
   void (*on_member_connect)(void* event_data, int64_t lobby_id, int64_t user_id);
@@ -405,7 +409,7 @@ typedef struct IDiscordLobbyEvents {
   void (*on_network_message)(void* event_data, int64_t lobby_id, int64_t user_id, uint8_t channel_id, uint8_t* data, uint32_t data_length);
 };
 
-typedef struct IDiscordLobbyManager {
+struct IDiscordLobbyManager {
   enum EDiscordResult (*get_lobby_create_transaction)(struct IDiscordLobbyManager* manager, struct IDiscordLobbyTransaction** transaction);
   enum EDiscordResult (*get_lobby_update_transaction)(struct IDiscordLobbyManager* manager, DiscordLobbyId lobby_id, struct IDiscordLobbyTransaction** transaction);
   enum EDiscordResult (*get_member_update_transaction)(struct IDiscordLobbyManager* manager, DiscordLobbyId lobby_id, DiscordUserId user_id, struct IDiscordLobbyMemberTransaction** transaction);
@@ -441,12 +445,12 @@ typedef struct IDiscordLobbyManager {
   enum EDiscordResult (*send_network_message)(struct IDiscordLobbyManager* manager, DiscordLobbyId lobby_id, DiscordUserId user_id, uint8_t channel_id, uint8_t* data, uint32_t data_length);
 };
 
-typedef struct IDiscordNetworkEvents {
+struct IDiscordNetworkEvents {
   void (*on_message)(void* event_data, DiscordNetworkPeerId peer_id, DiscordNetworkChannelId channel_id, uint8_t* data, uint32_t data_length);
   void (*on_route_update)(void* event_data, const char* route_data);
 };
 
-typedef struct IDiscordNetworkManager {
+struct IDiscordNetworkManager {
   /**
    * Get the local peer ID for this process.
    */
@@ -481,11 +485,11 @@ typedef struct IDiscordNetworkManager {
   enum EDiscordResult (*send_message)(struct IDiscordNetworkManager* manager, DiscordNetworkPeerId peer_id, DiscordNetworkChannelId channel_id, uint8_t* data, uint32_t data_length);
 };
 
-typedef struct IDiscordOverlayEvents {
+struct IDiscordOverlayEvents {
   void (*on_toggle)(void* event_data, bool locked);
 };
 
-typedef struct IDiscordOverlayManager {
+struct IDiscordOverlayManager {
   void (*is_enabled)(struct IDiscordOverlayManager* manager, bool* enabled);
   void (*is_locked)(struct IDiscordOverlayManager* manager, bool* locked);
   void (*set_locked)(struct IDiscordOverlayManager* manager, bool locked, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
@@ -496,7 +500,7 @@ typedef struct IDiscordOverlayManager {
 
 typedef void* IDiscordStorageEvents;
 
-typedef struct IDiscordStorageManager {
+struct IDiscordStorageManager {
     enum EDiscordResult (*read)(struct IDiscordStorageManager* manager, const char* name, uint8_t* data, uint32_t data_length, uint32_t* read);
     void (*read_async)(struct IDiscordStorageManager* manager, const char* name, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, uint8_t* data, uint32_t data_length));
     void (*read_async_partial)(struct IDiscordStorageManager* manager, const char* name, uint64_t offset, uint64_t length, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, uint8_t* data, uint32_t data_length));
@@ -510,12 +514,12 @@ typedef struct IDiscordStorageManager {
     enum EDiscordResult (*get_path)(struct IDiscordStorageManager* manager, DiscordPath* path);
 };
 
-typedef struct IDiscordStoreEvents {
+struct IDiscordStoreEvents {
   void (*on_entitlement_create)(void* event_data, struct DiscordEntitlement* entitlement);
   void (*on_entitlement_delete)(void* event_data, struct DiscordEntitlement* entitlement);
 };
 
-typedef struct IDiscordStoreManager {
+struct IDiscordStoreManager {
   void (*fetch_skus)(struct IDiscordStoreManager* manager, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
   void (*count_skus)(struct IDiscordStoreManager* manager, int32_t* count);
   enum EDiscordResult (*get_sku)(struct IDiscordStoreManager* manager, DiscordSnowflake sku_id, struct DiscordSku* sku);
@@ -528,11 +532,11 @@ typedef struct IDiscordStoreManager {
   void (*start_purchase)(struct IDiscordStoreManager* manager, DiscordSnowflake sku_id, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
 };
 
-typedef struct IDiscordVoiceEvents {
+struct IDiscordVoiceEvents {
   void (*on_settings_update)(void* event_data);
 };
 
-typedef struct IDiscordVoiceManager {
+struct IDiscordVoiceManager {
   enum EDiscordResult (*get_input_mode)(struct IDiscordVoiceManager* manager, struct DiscordInputMode* input_mode);
   void (*set_input_mode)(struct IDiscordVoiceManager* manager, struct DiscordInputMode input_mode, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
   enum EDiscordResult (*is_self_mute)(struct IDiscordVoiceManager* manager, bool* mute);
@@ -545,11 +549,11 @@ typedef struct IDiscordVoiceManager {
   enum EDiscordResult (*set_local_volume)(struct IDiscordVoiceManager* manager, DiscordSnowflake user_id, uint8_t volume);
 };
 
-typedef struct IDiscordAchievementEvents {
+struct IDiscordAchievementEvents {
   void (*on_user_achievement_update)(void* event_data, struct DiscordUserAchievement* user_achievement);
 };
 
-typedef struct IDiscordAchievementManager {
+struct IDiscordAchievementManager {
   void (*set_user_achievement)(struct IDiscordAchievementManager* manager, DiscordSnowflake achievement_id, uint8_t percent_complete, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
   void (*fetch_user_achievements)(struct IDiscordAchievementManager* manager, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
   void (*count_user_achievements)(struct IDiscordAchievementManager* manager, int32_t* count);
@@ -559,7 +563,7 @@ typedef struct IDiscordAchievementManager {
 
 typedef void* IDiscordCoreEvents;
 
-typedef struct IDiscordCore {
+struct IDiscordCore {
   void (*destroy)(struct IDiscordCore* core);
   enum EDiscordResult (*run_callbacks)(struct IDiscordCore* core);
   void (*set_log_hook)(struct IDiscordCore* core, enum EDiscordLogLevel min_level, void* hook_data, void (*hook)(void* hook_data, enum EDiscordLogLevel level, const char* message));
@@ -577,7 +581,7 @@ typedef struct IDiscordCore {
   struct IDiscordAchievementManager* (*get_achievement_manager)(struct IDiscordCore* core);
 };
 
-typedef struct DiscordCreateParams {
+struct DiscordCreateParams {
     DiscordClientId client_id;
     uint64_t flags;
     IDiscordCoreEvents* events;
@@ -608,29 +612,47 @@ typedef struct DiscordCreateParams {
     DiscordVersion achievement_version;
 };
 
-typedef static void* DiscordCreateParamsSetDefault(struct DiscordCreateParams* params);
+static void* DiscordCreateParamsSetDefault(struct DiscordCreateParams* params);
 
 enum EDiscordResult DiscordCreate(DiscordVersion version, struct DiscordCreateParams* params, struct IDiscordCore** result);
 
+typedef void (*callbackPtr)(void* callback_data, enum EDiscordResult result);
+
+typedef void (*loggerPtr)(void* hook_data, enum EDiscordLogLevel level, const char* message);
+
+typedef void (*onUserUpdatedPtr)(void* data);
+
+typedef void (*onOAuth2Ptr)(void* data, enum EDiscordResult result, struct DiscordOAuth2Token* token);
+
+struct Application {
+    struct IDiscordCore* core;
+    struct IDiscordUserManager* users;
+    struct IDiscordAchievementManager* achievements;
+    struct IDiscordActivityManager* activities;
+    struct IDiscordRelationshipManager* relationships;
+    struct IDiscordApplicationManager* application;
+    struct IDiscordLobbyManager* lobbies;
+    DiscordUserId user_id;
+};
 ]]
 
 -- Implement set default function in Lua because
 -- somehow I couldn't get FFI to call the static method
 -- DiscordCreateParamsSetDefault
 local function create_params_set_default(params)
-    -- params is a pointer to a pointer, so use [0][0]
-    params[0].application_version = discordGameSDKlib.DISCORD_APPLICATION_MANAGER_VERSION
-    params[0].user_version = discordGameSDKlib.DISCORD_USER_MANAGER_VERSION
-    params[0].image_version = discordGameSDKlib.DISCORD_IMAGE_MANAGER_VERSION
-    params[0].activity_version = discordGameSDKlib.DISCORD_ACTIVITY_MANAGER_VERSION
-    params[0].relationship_version = discordGameSDKlib.DISCORD_RELATIONSHIP_MANAGER_VERSION
-    params[0].lobby_version = discordGameSDKlib.DISCORD_LOBBY_MANAGER_VERSION
-    params[0].network_version = discordGameSDKlib.DISCORD_NETWORK_MANAGER_VERSION
-    params[0].overlay_version = discordGameSDKlib.DISCORD_OVERLAY_MANAGER_VERSION
-    params[0].storage_version = discordGameSDKlib.DISCORD_STORAGE_MANAGER_VERSION
-    params[0].store_version = discordGameSDKlib.DISCORD_VOICE_MANAGER_VERSION
-    params[0].voice_version = discordGameSDKlib.DISCORD_VOICE_MANAGER_VERSION
-    params[0].achievement_version = discordGameSDKlib.DISCORD_ACHIEVEMENT_MANAGER_VERSION
+    params[0].application_version = libGameSDK.DISCORD_APPLICATION_MANAGER_VERSION
+    params[0].user_version = libGameSDK.DISCORD_USER_MANAGER_VERSION
+    params[0].image_version = libGameSDK.DISCORD_IMAGE_MANAGER_VERSION
+    params[0].activity_version = libGameSDK.DISCORD_ACTIVITY_MANAGER_VERSION
+    params[0].relationship_version = libGameSDK.DISCORD_RELATIONSHIP_MANAGER_VERSION
+    params[0].lobby_version = libGameSDK.DISCORD_LOBBY_MANAGER_VERSION
+    params[0].network_version = libGameSDK.DISCORD_NETWORK_MANAGER_VERSION
+    params[0].overlay_version = libGameSDK.DISCORD_OVERLAY_MANAGER_VERSION
+    params[0].storage_version = libGameSDK.DISCORD_STORAGE_MANAGER_VERSION
+    params[0].store_version = libGameSDK.DISCORD_STORE_MANAGER_VERSION
+    params[0].voice_version = libGameSDK.DISCORD_VOICE_MANAGER_VERSION
+    params[0].achievement_version = libGameSDK.DISCORD_ACHIEVEMENT_MANAGER_VERSION
+    return params
 end
 
 -- typedef void (*readyPtr)(const DiscordUser* request);
@@ -638,7 +660,6 @@ end
 -- typedef void (*erroredPtr)(int errorCode, const char* message);
 -- typedef void (*joinGamePtr)(const char* joinSecret);
 -- typedef void (*spectateGamePtr)(const char* spectateSecret);
--- typedef void (*joinRequestPtr)(const DiscordUser* request);
 
 -- typedef struct DiscordEventHandlers {
 --     readyPtr ready;
@@ -668,19 +689,29 @@ end
 -- ]]
 
 local discordGameSDK = {} -- module table
-local app = {}
 
 -- proxy to detect garbage collection of the module
 discordGameSDK.gcDummy = newproxy(true)
 
 local function DISCORD_REQUIRE(x)
-    assert(x == discordGameSDKlib.DiscordResult_Ok)
+    if x == libGameSDK.DiscordResult_Ok then
+      assert(x == libGameSDK.DiscordResult_Ok)
+    else
+      print(string.format("oh no: %s", tostring(x)))
+      assert(x == libGameSDK.DiscordResult_Ok)
+    end
 end
 
 local function unpackDiscordUser(request)
-    return ffi.string(request.userId), ffi.string(request.username),
-        ffi.string(request.discriminator), ffi.string(request.avatar)
+    print(request)
+    print(ffi.string(request.username))
+    -- return request.id, ffi.string(request.username),
+    --     ffi.string(request.discriminator), ffi.string(request.avatar)
 end
+
+local on_user_updated = ffi.cast("onUserUpdatedPtr", function(data) 
+    print(ffi.string(data.username))
+end)
 
 -- callback proxies
 -- note: callbacks are not JIT compiled (= SLOW), try to avoid doing performance critical tasks in them
@@ -714,12 +745,25 @@ end
 --         discordGameSDK.spectateGame(ffi.string(spectateSecret))
 --     end
 -- end)
-    
--- local joinRequest_proxy = ffi.cast("joinRequestPtr", function(request)
---     if discordGameSDK.joinRequest then
---         discordGameSDK.joinRequest(unpackDiscordUser(request))
---     end
--- end)
+
+local oldffistring = ffi.string
+ffi.string = function(data) 
+    if data ~= nil then
+        return oldffistring(data)
+    else
+        return nil
+    end
+end
+
+local loggerCallback = ffi.cast("loggerPtr", function (data, level, message)
+  appPtr = ffi.cast("struct Application*", data)
+    print(string.format("aaaaaaaaaaaaaaaa: %s %s %s", tostring(level), ffi.string(message), appPtr.core))
+end)
+
+local on_oauth_2_token = ffi.cast("onOAuth2Ptr", function (data, result, token)
+  print("omg")
+end)
+
 
 -- Helper function to make sure the input is a given type
 function checkArg(arg, argType, argName, func, maybeNil)
@@ -751,38 +795,93 @@ function checkIntArg(arg, maxBits, argName, func, maybeNil)
 end
 
 -- function wrappers
-function discordGameSDK.initialize(applicationId, autoRegister, optionalSteamId)
+function discordGameSDK.initialize(clientId)
     local func = "discordGameSDK.Initialize"
     
-    local activities_events = ffi.new("struct IDiscordActivityEvents")
+    local app = ffi.new("struct Application")
+    local appPtr = ffi.new("struct Application[1]", app)
+    ffi.C.memset(appPtr, 0, ffi.sizeof(app))
 
-    -- create a pointer to a pointer
-    -- this is required by DiscordCreate
-    app.core = ffi.new("struct IDiscordCore*[1]")
-
+    local user_events = ffi.new("struct IDiscordUserEvents")
+    local userEventsPtr = ffi.new("struct IDiscordUserEvents[1]", user_events)
+    ffi.C.memset(userEventsPtr, 0, ffi.sizeof(user_events))
+    userEventsPtr[0].on_current_user_update = on_user_updated
     -- from here, it is basically a complete line by line port
     -- from examples/c/main.c in the Game SDK
-
-    -- create a pointer to a DiscordCreateParams
-    local params = ffi.new("struct DiscordCreateParams[1]")
-    create_params_set_default(params)
-    params[0].client_id = applicationId
-    params[0].flags = discordGameSDKlib.DiscordCreateFlags_Default
-    params[0].activity_events = activities_events
-    DISCORD_REQUIRE(discordGameSDKlib.DiscordCreate(discordGameSDKlib.DISCORD_VERSION, params, app.core))
-
-    app.activities = app.core[0][0].get_activity_manager(app.core[0][0])
     
-    app.core[0][0].run_callbacks(app.core[0][0])
+    -- create a pointer to a DiscordCreateParams
+    local params = ffi.new("struct DiscordCreateParams")
+    local paramsPtr = ffi.new("struct DiscordCreateParams[1]", params)
+    ffi.C.memset(paramsPtr, 0, ffi.sizeof(params))
+    create_params_set_default(paramsPtr)
+    params = paramsPtr[0]
+    params.client_id = clientId
+    params.flags = libGameSDK.DiscordCreateFlags_Default
+    params.event_data = appPtr
+    params.user_events = userEventsPtr
+    
+    local corePtrPtr = ffi.new("struct IDiscordCore*[1]", app.core)
+    ffi.C.memset(corePtrPtr, 0, ffi.sizeof(app.core))
+
+    DISCORD_REQUIRE(libGameSDK.DiscordCreate(libGameSDK.DISCORD_VERSION, paramsPtr, corePtrPtr))
+
+    -- set the core as the updated one, since pass by
+    -- reference doesn't work
+    app.core = corePtrPtr[0]
+
+    app.core.set_log_hook(app.core, libGameSDK.DiscordLogLevel_Debug, appPtr, loggerCallback)
+
+    app.activities = app.core[0].get_activity_manager(app.core)
+    app.application = app.core[0].get_application_manager(app.core)
+    app.users = app.core[0].get_user_manager(app.core)
+
+    app.application[0].get_oauth2_token(app.application, appPtr, on_oauth_2_token)
+    
+    local branch = ffi.new("DiscordBranch")
+    ffi.C.memset(branch, 0, 2)
+    local branchPtr = ffi.new("DiscordBranch[1]", branch)
+    ffi.C.memset(branchPtr, 0, ffi.sizeof(branch))
+    app.application.get_current_branch(app.application, branchPtr)
+    branch = branchPtr[0]
+    print(branchPtr)
+    print("before")
+    print(branch[0])
+    print(ffi.string(branch))
+    print("after")
+
+    -- while(true)
+    -- do
+    --     discordGameSDK.runCallbacks(app.core)
+    -- end
+    return app
+    -- discordGameSDK.runCallbacks()
+
 end
 
 function discordGameSDK.shutdown()
-    discordGameSDKlib.Discord_Shutdown()
+    libGameSDK.Discord_Shutdown()
 end
 
-function discordGameSDK.runCallbacks()
-    discordGameSDKlib.Discord_RunCallbacks()
+function discordGameSDK.runCallbacks(core)
+    DISCORD_REQUIRE(core.run_callbacks(core))
 end
+
+function discordGameSDK.updateActivity(activities, activity, core)
+  print(activities)
+  print(activity)
+  print(core)
+    activities.update_activity(activities, activity, core, updateActivityCallback)
+end
+
+local updateActivityCallback = ffi.cast("callbackPtr", function(callback_data, discord_result)
+    print("aa")
+    if discord_result == libGameSDK.DiscordResult_Ok then
+        print("succeeded")
+    else 
+        print("failed updating activity")
+    end
+end)
+
 -- http://luajit.org/ext_ffi_semantics.html#callback :
 -- It is not allowed, to let an FFI call into a C function (runCallbacks)
 -- get JIT-compiled, which in turn calls a callback, calling into Lua again (e.g. discordGameSDK.ready).
@@ -791,56 +890,79 @@ end
 -- solution:
 -- "Then you'll need to manually turn off JIT-compilation with jit.off() for
 -- the surrounding Lua function that invokes such a message polling function."
+jit.off(discordGameSDK.updateActivity)
+jit.off(discordGameSDK.updatePresence)
 jit.off(discordGameSDK.runCallbacks)
+jit.off(discordGameSDK.initialize)
 
-function discordGameSDK.updatePresence(presence)
+function discordGameSDK.updatePresence(app, presence)
     local func = "discordGameSDK.updatePresence"
-    checkArg(presence, "table", "presence", func)
+    -- checkArg(presence, "table", "presence", func)
 
-    -- -1 for string length because of 0-termination
-    checkStrArg(presence.state, 127, "presence.state", func, true)
-    checkStrArg(presence.details, 127, "presence.details", func, true)
+    -- -- -1 for string length because of 0-termination
+    -- checkStrArg(presence.state, 127, "presence.state", func, true)
+    -- checkStrArg(presence.details, 127, "presence.details", func, true)
 
-    checkIntArg(presence.startTimestamp, 64, "presence.startTimestamp", func, true)
-    checkIntArg(presence.endTimestamp, 64, "presence.endTimestamp", func, true)
+    -- checkIntArg(presence.startTimestamp, 64, "presence.startTimestamp", func, true)
+    -- checkIntArg(presence.endTimestamp, 64, "presence.endTimestamp", func, true)
 
-    checkStrArg(presence.largeImageKey, 31, "presence.largeImageKey", func, true)
-    checkStrArg(presence.largeImageText, 127, "presence.largeImageText", func, true)
-    checkStrArg(presence.smallImageKey, 31, "presence.smallImageKey", func, true)
-    checkStrArg(presence.smallImageText, 127, "presence.smallImageText", func, true)
-    checkStrArg(presence.partyId, 127, "presence.partyId", func, true)
+    -- checkStrArg(presence.largeImageKey, 31, "presence.largeImageKey", func, true)
+    -- checkStrArg(presence.largeImageText, 127, "presence.largeImageText", func, true)
+    -- checkStrArg(presence.smallImageKey, 31, "presence.smallImageKey", func, true)
+    -- checkStrArg(presence.smallImageText, 127, "presence.smallImageText", func, true)
+    -- checkStrArg(presence.partyId, 127, "presence.partyId", func, true)
 
-    checkIntArg(presence.partySize, 32, "presence.partySize", func, true)
-    checkIntArg(presence.partyMax, 32, "presence.partyMax", func, true)
+    -- checkIntArg(presence.partySize, 32, "presence.partySize", func, true)
+    -- checkIntArg(presence.partyMax, 32, "presence.partyMax", func, true)
 
-    checkStrArg(presence.matchSecret, 127, "presence.matchSecret", func, true)
-    checkStrArg(presence.joinSecret, 127, "presence.joinSecret", func, true)
-    checkStrArg(presence.spectateSecret, 127, "presence.spectateSecret", func, true)
+    -- checkStrArg(presence.matchSecret, 127, "presence.matchSecret", func, true)
+    -- checkStrArg(presence.joinSecret, 127, "presence.joinSecret", func, true)
+    -- checkStrArg(presence.spectateSecret, 127, "presence.spectateSecret", func, true)
 
-    checkIntArg(presence.instance, 8, "presence.instance", func, true)
+    -- checkIntArg(presence.instance, 8, "presence.instance", func, true)
 
-    local cpresence = ffi.new("struct DiscordRichPresence")
-    cpresence.state = presence.state
-    cpresence.details = presence.details
-    cpresence.startTimestamp = presence.startTimestamp or 0
-    cpresence.endTimestamp = presence.endTimestamp or 0
-    cpresence.largeImageKey = presence.largeImageKey
-    cpresence.largeImageText = presence.largeImageText
-    cpresence.smallImageKey = presence.smallImageKey
-    cpresence.smallImageText = presence.smallImageText
-    cpresence.partyId = presence.partyId
-    cpresence.partySize = presence.partySize or 0
-    cpresence.partyMax = presence.partyMax or 0
-    cpresence.matchSecret = presence.matchSecret
-    cpresence.joinSecret = presence.joinSecret
-    cpresence.spectateSecret = presence.spectateSecret
-    cpresence.instance = presence.instance or 0
+    local activity = ffi.new("struct DiscordActivity")
+    activity.type = libGameSDK.DiscordActivityType_Playing
+    activity.details = "testing"
+    activity.state = "testing"
+    activity.assets.large_image = "radio"
+    activity.assets.large_text = "listening here"
 
-    discordGameSDKlib.Discord_UpdatePresence(cpresence)
+    -- local user = ffi.new("struct DiscordUser")
+    -- app.users.get_current_user(app.users, user)
+    -- unpackDiscordUser(user)
+
+    local activityPtr = ffi.new("struct DiscordActivity*", activity)
+    
+    -- discordGameSDK.updateActivity(app.activities, activityPtr, app.core)
+
+    -- discordGameSDK.runCallbacks(app.core)
+
+    print("more test")
+    
+    return app
+    -- local cpresence = ffi.new("struct DiscordRichPresence")
+    -- cpresence.state = presence.state
+    -- cpresence.details = presence.details
+    -- cpresence.startTimestamp = presence.startTimestamp or 0
+    -- cpresence.endTimestamp = presence.endTimestamp or 0
+    -- cpresence.largeImageKey = presence.largeImageKey
+    -- cpresence.largeImageText = presence.largeImageText
+    -- cpresence.smallImageKey = presence.smallImageKey
+    -- cpresence.smallImageText = presence.smallImageText
+    -- cpresence.partyId = presence.partyId
+    -- cpresence.partySize = presence.partySize or 0
+    -- cpresence.partyMax = presence.partyMax or 0
+    -- cpresence.matchSecret = presence.matchSecret
+    -- cpresence.joinSecret = presence.joinSecret
+    -- cpresence.spectateSecret = presence.spectateSecret
+    -- cpresence.instance = presence.instance or 0
+
+    -- libGameSDK.Discord_UpdatePresence(cpresence)
 end
 
 function discordGameSDK.clearPresence()
-    discordGameSDKlib.Discord_ClearPresence()
+    libGameSDK.Discord_ClearPresence()
 end
 
 local replyMap = {
@@ -853,7 +975,7 @@ local replyMap = {
 function discordGameSDK.respond(userId, reply)
     checkStrArg(userId, nil, "userId", "discordGameSDK.respond")
     assert(replyMap[reply], "Argument 'reply' to discordGameSDK.respond has to be one of \"yes\", \"no\" or \"ignore\"")
-    discordGameSDKlib.Discord_Respond(userId, replyMap[reply])
+    libGameSDK.Discord_Respond(userId, replyMap[reply])
 end
 
 -- garbage collection callback

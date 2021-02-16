@@ -2,6 +2,8 @@ local options = require 'mp.options'
 local msg = require 'mp.msg'
 local gameSDK = require 'lua-discordGameSDK'
 
+local app
+
 -- set [options]
 local o = {
 	rpc_wrapper = "lua-discordGameSDK",
@@ -190,24 +192,33 @@ local function main()
 	end
 
 	-- run Rich Presence
-	-- set python path
-	local pythonPath
-	local lib
-	pythonPath = mp.get_script_directory() .. "/pypresence-wrapper.py"
-		
-	-- run Rich Presence with pypresence
-	local command = ('python "%s" set "%s"'):format(
-		pythonPath,
-		json.encode(presence):gsub("\"", "\\\"")
-	)
-	mp.register_event('shutdown', function()
-		command = ('python "%s" shutdown'):format(pythonPath)
-		io.popen(command)
-		os.exit()
-	end)
+	
 	if o.active == "yes" then
-		io.popen(command)
+		presence.details = presence.details:len() > 127 and presence.details:sub(1, 127) or presence.details
+		-- app = gameSDK.updatePresence(app, presence)
+		-- gameSDK.runCallbacks()
+	else
+		-- gameSDK.shutdown()
 	end
+
+
+	-- local pythonPath
+	-- local lib
+	-- pythonPath = mp.get_script_directory() .. "/pypresence-wrapper.py"
+		
+	-- -- run Rich Presence with pypresence
+	-- local command = ('python "%s" set "%s"'):format(
+	-- 	pythonPath,
+	-- 	json.encode(presence):gsub("\"", "\\\"")
+	-- )
+	-- mp.register_event('shutdown', function()
+	-- 	command = ('python "%s" shutdown'):format(pythonPath)
+	-- 	io.popen(command)
+	-- 	os.exit()
+	-- end)
+	-- if o.active == "yes" then
+	-- 	io.popen(command)
+	-- end
 end
 
 -- print script info
@@ -232,6 +243,9 @@ mp.add_key_binding(o.key_toggle, "active-toggle", function()
 		msg.info(string.format("Status: %s", status))
 	end,
 	{repeatable=false})
+
+local clientId = 798647747678568488LL
+app = gameSDK.initialize(clientId)
 
 -- run `main` function
 mp.add_periodic_timer(o.periodic_timer, main)
