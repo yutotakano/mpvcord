@@ -342,15 +342,15 @@ struct IDiscordLobbySearchQuery {
 typedef void* IDiscordApplicationEvents;
 
 struct IDiscordApplicationManager {
-    void (*validate_or_exit)(struct IDiscordApplicationManager* manager, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
-    void (*get_current_locale)(struct IDiscordApplicationManager* manager, DiscordLocale* locale);
-    void (*get_current_branch)(struct IDiscordApplicationManager* manager, DiscordBranch* branch);
-    void (*get_oauth2_token)(struct IDiscordApplicationManager* manager, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, struct DiscordOAuth2Token* oauth2_token));
-    void (*get_ticket)(struct IDiscordApplicationManager* manager, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, const char* data));
+  void (*validate_or_exit)(struct IDiscordApplicationManager* manager, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
+  void (*get_current_locale)(struct IDiscordApplicationManager* manager, DiscordLocale* locale);
+  void (*get_current_branch)(struct IDiscordApplicationManager* manager, DiscordBranch* branch);
+  void (*get_oauth2_token)(struct IDiscordApplicationManager* manager, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, struct DiscordOAuth2Token* oauth2_token));
+  void (*get_ticket)(struct IDiscordApplicationManager* manager, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, const char* data));
 };
 
 struct IDiscordUserEvents {
-    void (*on_current_user_update)(void* event_data);
+  void (*on_current_user_update)(void* event_data);
 };
 
 struct IDiscordUserManager {
@@ -500,17 +500,17 @@ struct IDiscordOverlayManager {
 typedef void* IDiscordStorageEvents;
 
 struct IDiscordStorageManager {
-    enum EDiscordResult (*read)(struct IDiscordStorageManager* manager, const char* name, uint8_t* data, uint32_t data_length, uint32_t* read);
-    void (*read_async)(struct IDiscordStorageManager* manager, const char* name, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, uint8_t* data, uint32_t data_length));
-    void (*read_async_partial)(struct IDiscordStorageManager* manager, const char* name, uint64_t offset, uint64_t length, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, uint8_t* data, uint32_t data_length));
-    enum EDiscordResult (*write)(struct IDiscordStorageManager* manager, const char* name, uint8_t* data, uint32_t data_length);
-    void (*write_async)(struct IDiscordStorageManager* manager, const char* name, uint8_t* data, uint32_t data_length, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
-    enum EDiscordResult (*delete_)(struct IDiscordStorageManager* manager, const char* name);
-    enum EDiscordResult (*exists)(struct IDiscordStorageManager* manager, const char* name, bool* exists);
-    void (*count)(struct IDiscordStorageManager* manager, int32_t* count);
-    enum EDiscordResult (*stat)(struct IDiscordStorageManager* manager, const char* name, struct DiscordFileStat* stat);
-    enum EDiscordResult (*stat_at)(struct IDiscordStorageManager* manager, int32_t index, struct DiscordFileStat* stat);
-    enum EDiscordResult (*get_path)(struct IDiscordStorageManager* manager, DiscordPath* path);
+  enum EDiscordResult (*read)(struct IDiscordStorageManager* manager, const char* name, uint8_t* data, uint32_t data_length, uint32_t* read);
+  void (*read_async)(struct IDiscordStorageManager* manager, const char* name, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, uint8_t* data, uint32_t data_length));
+  void (*read_async_partial)(struct IDiscordStorageManager* manager, const char* name, uint64_t offset, uint64_t length, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result, uint8_t* data, uint32_t data_length));
+  enum EDiscordResult (*write)(struct IDiscordStorageManager* manager, const char* name, uint8_t* data, uint32_t data_length);
+  void (*write_async)(struct IDiscordStorageManager* manager, const char* name, uint8_t* data, uint32_t data_length, void* callback_data, void (*callback)(void* callback_data, enum EDiscordResult result));
+  enum EDiscordResult (*delete_)(struct IDiscordStorageManager* manager, const char* name);
+  enum EDiscordResult (*exists)(struct IDiscordStorageManager* manager, const char* name, bool* exists);
+  void (*count)(struct IDiscordStorageManager* manager, int32_t* count);
+  enum EDiscordResult (*stat)(struct IDiscordStorageManager* manager, const char* name, struct DiscordFileStat* stat);
+  enum EDiscordResult (*stat_at)(struct IDiscordStorageManager* manager, int32_t index, struct DiscordFileStat* stat);
+  enum EDiscordResult (*get_path)(struct IDiscordStorageManager* manager, DiscordPath* path);
 };
 
 struct IDiscordStoreEvents {
@@ -581,34 +581,34 @@ struct IDiscordCore {
 };
 
 struct DiscordCreateParams {
-    DiscordClientId client_id;
-    uint64_t flags;
-    IDiscordCoreEvents* events;
-    void* event_data;
-    IDiscordApplicationEvents* application_events;
-    DiscordVersion application_version;
-    struct IDiscordUserEvents* user_events;
-    DiscordVersion user_version;
-    IDiscordImageEvents* image_events;
-    DiscordVersion image_version;
-    struct IDiscordActivityEvents* activity_events;
-    DiscordVersion activity_version;
-    struct IDiscordRelationshipEvents* relationship_events;
-    DiscordVersion relationship_version;
-    struct IDiscordLobbyEvents* lobby_events;
-    DiscordVersion lobby_version;
-    struct IDiscordNetworkEvents* network_events;
-    DiscordVersion network_version;
-    struct IDiscordOverlayEvents* overlay_events;
-    DiscordVersion overlay_version;
-    IDiscordStorageEvents* storage_events;
-    DiscordVersion storage_version;
-    struct IDiscordStoreEvents* store_events;
-    DiscordVersion store_version;
-    struct IDiscordVoiceEvents* voice_events;
-    DiscordVersion voice_version;
-    struct IDiscordAchievementEvents* achievement_events;
-    DiscordVersion achievement_version;
+  DiscordClientId client_id;
+  uint64_t flags;
+  IDiscordCoreEvents* events;
+  void* event_data;
+  IDiscordApplicationEvents* application_events;
+  DiscordVersion application_version;
+  struct IDiscordUserEvents* user_events;
+  DiscordVersion user_version;
+  IDiscordImageEvents* image_events;
+  DiscordVersion image_version;
+  struct IDiscordActivityEvents* activity_events;
+  DiscordVersion activity_version;
+  struct IDiscordRelationshipEvents* relationship_events;
+  DiscordVersion relationship_version;
+  struct IDiscordLobbyEvents* lobby_events;
+  DiscordVersion lobby_version;
+  struct IDiscordNetworkEvents* network_events;
+  DiscordVersion network_version;
+  struct IDiscordOverlayEvents* overlay_events;
+  DiscordVersion overlay_version;
+  IDiscordStorageEvents* storage_events;
+  DiscordVersion storage_version;
+  struct IDiscordStoreEvents* store_events;
+  DiscordVersion store_version;
+  struct IDiscordVoiceEvents* voice_events;
+  DiscordVersion voice_version;
+  struct IDiscordAchievementEvents* achievement_events;
+  DiscordVersion achievement_version;
 };
 
 static void* DiscordCreateParamsSetDefault(struct DiscordCreateParams* params);
@@ -624,14 +624,14 @@ typedef void (*onUserUpdatedPtr)(void* data);
 typedef void (*onOAuth2Ptr)(void* data, enum EDiscordResult result, struct DiscordOAuth2Token* token);
 
 struct Application {
-    struct IDiscordCore* core;
-    struct IDiscordUserManager* users;
-    struct IDiscordAchievementManager* achievements;
-    struct IDiscordActivityManager* activities;
-    struct IDiscordRelationshipManager* relationships;
-    struct IDiscordApplicationManager* application;
-    struct IDiscordLobbyManager* lobbies;
-    DiscordUserId user_id;
+  struct IDiscordCore* core;
+  struct IDiscordUserManager* users;
+  struct IDiscordAchievementManager* achievements;
+  struct IDiscordActivityManager* activities;
+  struct IDiscordRelationshipManager* relationships;
+  struct IDiscordApplicationManager* application;
+  struct IDiscordLobbyManager* lobbies;
+  DiscordUserId user_id;
 };
 ]]
 
@@ -639,19 +639,19 @@ struct Application {
 -- somehow I couldn't get FFI to call the static method
 -- DiscordCreateParamsSetDefault
 local function create_params_set_default(paramsPtr)
-    paramsPtr[0].application_version = libGameSDK.DISCORD_APPLICATION_MANAGER_VERSION
-    paramsPtr[0].user_version = libGameSDK.DISCORD_USER_MANAGER_VERSION
-    paramsPtr[0].image_version = libGameSDK.DISCORD_IMAGE_MANAGER_VERSION
-    paramsPtr[0].activity_version = libGameSDK.DISCORD_ACTIVITY_MANAGER_VERSION
-    paramsPtr[0].relationship_version = libGameSDK.DISCORD_RELATIONSHIP_MANAGER_VERSION
-    paramsPtr[0].lobby_version = libGameSDK.DISCORD_LOBBY_MANAGER_VERSION
-    paramsPtr[0].network_version = libGameSDK.DISCORD_NETWORK_MANAGER_VERSION
-    paramsPtr[0].overlay_version = libGameSDK.DISCORD_OVERLAY_MANAGER_VERSION
-    paramsPtr[0].storage_version = libGameSDK.DISCORD_STORAGE_MANAGER_VERSION
-    paramsPtr[0].store_version = libGameSDK.DISCORD_STORE_MANAGER_VERSION
-    paramsPtr[0].voice_version = libGameSDK.DISCORD_VOICE_MANAGER_VERSION
-    paramsPtr[0].achievement_version = libGameSDK.DISCORD_ACHIEVEMENT_MANAGER_VERSION
-    return params
+  paramsPtr[0].application_version = libGameSDK.DISCORD_APPLICATION_MANAGER_VERSION
+  paramsPtr[0].user_version = libGameSDK.DISCORD_USER_MANAGER_VERSION
+  paramsPtr[0].image_version = libGameSDK.DISCORD_IMAGE_MANAGER_VERSION
+  paramsPtr[0].activity_version = libGameSDK.DISCORD_ACTIVITY_MANAGER_VERSION
+  paramsPtr[0].relationship_version = libGameSDK.DISCORD_RELATIONSHIP_MANAGER_VERSION
+  paramsPtr[0].lobby_version = libGameSDK.DISCORD_LOBBY_MANAGER_VERSION
+  paramsPtr[0].network_version = libGameSDK.DISCORD_NETWORK_MANAGER_VERSION
+  paramsPtr[0].overlay_version = libGameSDK.DISCORD_OVERLAY_MANAGER_VERSION
+  paramsPtr[0].storage_version = libGameSDK.DISCORD_STORAGE_MANAGER_VERSION
+  paramsPtr[0].store_version = libGameSDK.DISCORD_STORE_MANAGER_VERSION
+  paramsPtr[0].voice_version = libGameSDK.DISCORD_VOICE_MANAGER_VERSION
+  paramsPtr[0].achievement_version = libGameSDK.DISCORD_ACHIEVEMENT_MANAGER_VERSION
+  return params
 end
 
 local discordGameSDK = {} -- module table
@@ -660,10 +660,10 @@ local discordGameSDK = {} -- module table
 discordGameSDK.gcDummy = newproxy(true)
 
 local function DISCORD_REQUIRE(x)
-    if x ~= libGameSDK.DiscordResult_Ok then
-      print(string.format("mpvcord encountered an error with Discord: %s", tostring(x)))
-    end
-    assert(x == libGameSDK.DiscordResult_Ok)
+  if x ~= libGameSDK.DiscordResult_Ok then
+    print(string.format("mpvcord encountered an error with Discord: %s", tostring(x)))
+  end
+  assert(x == libGameSDK.DiscordResult_Ok)
 end
 
 local on_user_updated = ffi.cast("onUserUpdatedPtr", function(data)
@@ -682,31 +682,40 @@ end)
 
 -- Helper function to make sure the input is a given type
 function checkArg(arg, argType, argName, func, maybeNil)
-    assert(type(arg) == argType or (maybeNil and arg == nil),
-        string.format("Argument \"%s\" to function \"%s\" has to be of type \"%s\"",
-            argName, func, argType))
+  assert(
+    type(arg) == argType or (maybeNil and arg == nil),
+    string.format(
+      "Argument \"%s\" to function \"%s\" has to be of type \"%s\"",
+      argName, func, argType)
+  )
 end
 
 -- Helper function to make sure the input is a string within length
 function checkStrArg(arg, maxLen, argName, func, maybeNil)
-    if maxLen then
-        assert(type(arg) == "string" and arg:len() <= maxLen or (maybeNil and arg == nil),
-            string.format("Argument \"%s\" of function \"%s\" has to be of type string with maximum length %d",
-                argName, func, maxLen))
-    else
-        checkArg(arg, "string", argName, func, true)
-    end
+  if maxLen then
+    assert(
+      type(arg) == "string" and arg:len() <= maxLen or (maybeNil and arg == nil),
+      string.format(
+        "Argument \"%s\" of function \"%s\" has to be of type string with maximum length %d",
+        argName, func, maxLen)
+    )
+  else
+    checkArg(arg, "string", argName, func, true)
+  end
 end
 
 -- Helper function to make sure the input is within a max int value
 function checkIntArg(arg, maxBits, argName, func, maybeNil)
-    maxBits = math.min(maxBits or 32, 52) -- lua number (double) can only store integers < 2^53
-    local maxVal = 2^(maxBits-1) -- assuming signed integers, which, for now, are the only ones in use
-    assert(type(arg) == "number" and math.floor(arg) == arg
-        and arg < maxVal and arg >= -maxVal
-        or (maybeNil and arg == nil),
-        string.format("Argument \"%s\" of function \"%s\" has to be a whole number <= %d",
-            argName, func, maxVal))
+  maxBits = math.min(maxBits or 32, 52) -- lua number (double) can only store integers < 2^53
+  local maxVal = 2^(maxBits-1) -- assuming signed integers, which, for now, are the only ones in use
+  assert(
+    type(arg) == "number" and math.floor(arg) == arg
+    and arg < maxVal and arg >= -maxVal
+    or (maybeNil and arg == nil),
+    string.format(
+      "Argument \"%s\" of function \"%s\" has to be a whole number <= %d",
+      argName, func, maxVal)
+  )
 end
 
 -- This function is basically a complete line by line port
@@ -718,39 +727,39 @@ end
 -- The desired one is always [0], so we simply do not use
 -- the original objects after a pointer to them have been made.
 function discordGameSDK.initialize(clientId)
-    local app = ffi.new("struct Application")
-    local appPtr = ffi.new("struct Application[1]", app)
-    ffi.C.memset(appPtr, 0, ffi.sizeof(app))
+  local app = ffi.new("struct Application")
+  local appPtr = ffi.new("struct Application[1]", app)
+  ffi.C.memset(appPtr, 0, ffi.sizeof(app))
 
-    local user_events = ffi.new("struct IDiscordUserEvents")
-    local userEventsPtr = ffi.new("struct IDiscordUserEvents[1]", user_events)
-    ffi.C.memset(userEventsPtr, 0, ffi.sizeof(user_events))
+  local user_events = ffi.new("struct IDiscordUserEvents")
+  local userEventsPtr = ffi.new("struct IDiscordUserEvents[1]", user_events)
+  ffi.C.memset(userEventsPtr, 0, ffi.sizeof(user_events))
     
-    userEventsPtr[0].on_current_user_update = on_user_updated
+  userEventsPtr[0].on_current_user_update = on_user_updated
     
-    local params = ffi.new("struct DiscordCreateParams")
-    local paramsPtr = ffi.new("struct DiscordCreateParams[1]", params)
-    ffi.C.memset(paramsPtr, 0, ffi.sizeof(params))
-    create_params_set_default(paramsPtr)
-    paramsPtr[0].client_id = clientId
-    paramsPtr[0].flags = libGameSDK.DiscordCreateFlags_Default
-    paramsPtr[0].event_data = appPtr
-    paramsPtr[0].user_events = userEventsPtr
+  local params = ffi.new("struct DiscordCreateParams")
+  local paramsPtr = ffi.new("struct DiscordCreateParams[1]", params)
+  ffi.C.memset(paramsPtr, 0, ffi.sizeof(params))
+  create_params_set_default(paramsPtr)
+  paramsPtr[0].client_id = clientId
+  paramsPtr[0].flags = libGameSDK.DiscordCreateFlags_Default
+  paramsPtr[0].event_data = appPtr
+  paramsPtr[0].user_events = userEventsPtr
     
-    local corePtrPtr = ffi.new("struct IDiscordCore*[1]", app.core)
-    ffi.C.memset(corePtrPtr, 0, ffi.sizeof(app.core))
+  local corePtrPtr = ffi.new("struct IDiscordCore*[1]", app.core)
+  ffi.C.memset(corePtrPtr, 0, ffi.sizeof(app.core))
 
-    DISCORD_REQUIRE(libGameSDK.DiscordCreate(libGameSDK.DISCORD_VERSION, paramsPtr, corePtrPtr))
+  DISCORD_REQUIRE(libGameSDK.DiscordCreate(libGameSDK.DISCORD_VERSION, paramsPtr, corePtrPtr))
 
-    appPtr[0].core = corePtrPtr[0]
+  appPtr[0].core = corePtrPtr[0]
 
-    appPtr[0].core:set_log_hook(libGameSDK.DiscordLogLevel_Debug, appPtr, loggerCallback)
+  appPtr[0].core:set_log_hook(libGameSDK.DiscordLogLevel_Debug, appPtr, loggerCallback)
 
-    appPtr[0].activities = appPtr[0].core[0]:get_activity_manager()
-    appPtr[0].application = appPtr[0].core[0]:get_application_manager()
-    appPtr[0].users = appPtr[0].core[0]:get_user_manager()
+  appPtr[0].activities = appPtr[0].core[0]:get_activity_manager()
+  appPtr[0].application = appPtr[0].core[0]:get_application_manager()
+  appPtr[0].users = appPtr[0].core[0]:get_user_manager()
     
-    discordGameSDK.runCallbacks(appPtr[0].core)
+  discordGameSDK.runCallbacks(appPtr[0].core)
 
     -- By http://lua-users.org/lists/lua-l/2011-04/msg00516.html,
     -- The LuaJIT FFI Garbage Collector doesn't follow pointers when
@@ -759,41 +768,41 @@ function discordGameSDK.initialize(clientId)
     -- ffi.new() as a pointer in a struct field."
     -- Hence, a referencesTable is passed around instead of just 
     -- the app, although none of the keys are used apart from app.
-    local referencesTable = {
-      app = appPtr[0],
-      appPtr = appPtr,
-      userEvents = userEvents,
-      userEventsPtr = userEventsPtr,
-      corePtr = appPtr[0].core,
-      corePtrPtr = corePtrPtr,
-      activities = appPtr[0].activities,
-      application = appPtr[0].application,
-      users = appPtr[0].users
-    }
+  local referencesTable = {
+    app = appPtr[0],
+    appPtr = appPtr,
+    userEvents = userEvents,
+    userEventsPtr = userEventsPtr,
+    corePtr = appPtr[0].core,
+    corePtrPtr = corePtrPtr,
+    activities = appPtr[0].activities,
+    application = appPtr[0].application,
+    users = appPtr[0].users
+  }
 
-    return referencesTable
+  return referencesTable
 
 end
 
 function discordGameSDK.shutdown(app)
-    app.core.destroy()
+  app.core.destroy()
 end
 
 function discordGameSDK.runCallbacks(core)
-    DISCORD_REQUIRE(core.run_callbacks(core))
+  DISCORD_REQUIRE(core.run_callbacks(core))
 end
 
 function discordGameSDK.updateActivity(activities, activity, core)
   activities.update_activity(activities, activity, core, updateActivityCallback)
 end
 
+-- Somehow this isn't being called but meh
 local updateActivityCallback = ffi.cast("callbackPtr", function(callback_data, discord_result)
-    print("aa")
-    if discord_result == libGameSDK.DiscordResult_Ok then
-        print("succeeded")
-    else 
-        print("failed updating activity")
-    end
+  if discord_result == libGameSDK.DiscordResult_Ok then
+    print("succeeded")
+  else 
+    print("failed updating activity")
+  end
 end)
 
 -- http://luajit.org/ext_ffi_semantics.html#callback :
@@ -806,65 +815,65 @@ jit.off(discordGameSDK.runCallbacks)
 jit.off(discordGameSDK.initialize)
 
 function discordGameSDK.updatePresence(referencesTable, presence)
-    local func = "discordGameSDK.updatePresence"
-    -- checkArg(presence, "table", "presence", func)
+  local func = "discordGameSDK.updatePresence"
+  -- checkArg(presence, "table", "presence", func)
 
-    -- -- -1 for string length because of 0-termination
-    -- checkStrArg(presence.state, 127, "presence.state", func, true)
-    -- checkStrArg(presence.details, 127, "presence.details", func, true)
+  -- -- -1 for string length because of 0-termination
+  -- checkStrArg(presence.state, 127, "presence.state", func, true)
+  -- checkStrArg(presence.details, 127, "presence.details", func, true)
 
-    -- checkIntArg(presence.startTimestamp, 64, "presence.startTimestamp", func, true)
-    -- checkIntArg(presence.endTimestamp, 64, "presence.endTimestamp", func, true)
+  -- checkIntArg(presence.startTimestamp, 64, "presence.startTimestamp", func, true)
+  -- checkIntArg(presence.endTimestamp, 64, "presence.endTimestamp", func, true)
 
-    -- checkStrArg(presence.largeImageKey, 31, "presence.largeImageKey", func, true)
-    -- checkStrArg(presence.largeImageText, 127, "presence.largeImageText", func, true)
-    -- checkStrArg(presence.smallImageKey, 31, "presence.smallImageKey", func, true)
-    -- checkStrArg(presence.smallImageText, 127, "presence.smallImageText", func, true)
-    -- checkStrArg(presence.partyId, 127, "presence.partyId", func, true)
+  -- checkStrArg(presence.largeImageKey, 31, "presence.largeImageKey", func, true)
+  -- checkStrArg(presence.largeImageText, 127, "presence.largeImageText", func, true)
+  -- checkStrArg(presence.smallImageKey, 31, "presence.smallImageKey", func, true)
+  -- checkStrArg(presence.smallImageText, 127, "presence.smallImageText", func, true)
+  -- checkStrArg(presence.partyId, 127, "presence.partyId", func, true)
 
-    -- checkIntArg(presence.partySize, 32, "presence.partySize", func, true)
-    -- checkIntArg(presence.partyMax, 32, "presence.partyMax", func, true)
+  -- checkIntArg(presence.partySize, 32, "presence.partySize", func, true)
+  -- checkIntArg(presence.partyMax, 32, "presence.partyMax", func, true)
 
-    -- checkStrArg(presence.matchSecret, 127, "presence.matchSecret", func, true)
-    -- checkStrArg(presence.joinSecret, 127, "presence.joinSecret", func, true)
-    -- checkStrArg(presence.spectateSecret, 127, "presence.spectateSecret", func, true)
+  -- checkStrArg(presence.matchSecret, 127, "presence.matchSecret", func, true)
+  -- checkStrArg(presence.joinSecret, 127, "presence.joinSecret", func, true)
+  -- checkStrArg(presence.spectateSecret, 127, "presence.spectateSecret", func, true)
 
-    -- checkIntArg(presence.instance, 8, "presence.instance", func, true)
+  -- checkIntArg(presence.instance, 8, "presence.instance", func, true)
 
-    local app = referencesTable.app
-    app.activities = app.core[0]:get_activity_manager()
-    app.application = app.core[0]:get_application_manager()
-    app.users = app.core[0]:get_user_manager()
+  local app = referencesTable.app
+  app.activities = app.core[0]:get_activity_manager()
+  app.application = app.core[0]:get_application_manager()
+  app.users = app.core[0]:get_user_manager()
 
-    local activity = ffi.new("struct DiscordActivity")
-    local activityPtr = ffi.new("struct DiscordActivity[1]", activity)
-    ffi.C.memset(activityPtr, 0, ffi.sizeof(activity))
+  local activity = ffi.new("struct DiscordActivity")
+  local activityPtr = ffi.new("struct DiscordActivity[1]", activity)
+  ffi.C.memset(activityPtr, 0, ffi.sizeof(activity))
 
-    activityPtr[0].type = libGameSDK.DiscordActivityType_Playing
-    activityPtr[0].state = presence.state or ""
-    activityPtr[0].details = presence.details or ""
-    activityPtr[0].timestamps.start = presence.start_time or 0
-    activityPtr[0].timestamps["end"] = presence.end_time or 0
-    activityPtr[0].assets.large_image = presence.large_image or ""
-    activityPtr[0].assets.large_text = presence.large_text or ""
-    activityPtr[0].assets.small_image = presence.small_image or ""
-    activityPtr[0].assets.small_text = presence.small_text or ""
-    activityPtr[0].party.id = presence.party_id or ""
-    activityPtr[0].party.size.current_size = presence.party_size or 0
-    activityPtr[0].party.size.max_size = presence.party_max or 0
-    activityPtr[0].secrets.match = presence.match_secret or ""
-    activityPtr[0].secrets.join = presence.join_secret or ""
-    activityPtr[0].secrets.spectate = presence.spectate_secret or ""
+  activityPtr[0].type = libGameSDK.DiscordActivityType_Playing
+  activityPtr[0].state = presence.state or ""
+  activityPtr[0].details = presence.details or ""
+  activityPtr[0].timestamps.start = presence.start_time or 0
+  activityPtr[0].timestamps["end"] = presence.end_time or 0
+  activityPtr[0].assets.large_image = presence.large_image or ""
+  activityPtr[0].assets.large_text = presence.large_text or ""
+  activityPtr[0].assets.small_image = presence.small_image or ""
+  activityPtr[0].assets.small_text = presence.small_text or ""
+  activityPtr[0].party.id = presence.party_id or ""
+  activityPtr[0].party.size.current_size = presence.party_size or 0
+  activityPtr[0].party.size.max_size = presence.party_max or 0
+  activityPtr[0].secrets.match = presence.match_secret or ""
+  activityPtr[0].secrets.join = presence.join_secret or ""
+  activityPtr[0].secrets.spectate = presence.spectate_secret or ""
     
-    discordGameSDK.updateActivity(app.activities, activityPtr, app.core)
-    discordGameSDK.runCallbacks(app.core)
+  discordGameSDK.updateActivity(app.activities, activityPtr, app.core)
+  discordGameSDK.runCallbacks(app.core)
 
-    -- Make sure garbage memory is collected, or otherwise
-    -- this script will keep on increasming RAM usage by about 8KB
-    -- everytime updateActivity or clearActivity is run.
-    collectgarbage()
-    collectgarbage()
-    return referencesTable
+  -- Make sure garbage memory is collected, or otherwise
+  -- this script will keep on increasming RAM usage by about 8KB
+  -- everytime updateActivity or clearActivity is run.
+  collectgarbage()
+  collectgarbage()
+  return referencesTable
 end
 
 function discordGameSDK.clearPresence(referencesTable)
