@@ -242,7 +242,9 @@ local function main()
 
   -- set game activity
   presence.details = presence.details:len() > 127 and presence.details:sub(1, 127) or presence.details
+  msg.verbose("Setting discord presence...")
   discord_instance = gameSDK.updatePresence(discord_instance, presence)
+  msg.verbose("Discord presence set.")
 end
 
 
