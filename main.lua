@@ -77,9 +77,6 @@ end, {
 -- Initialise Discord Game SDK and keep its instance
 discord_instance = gameSDK.initialize(o.client_id)
 
--- Call main() once, and keep it calling periodically.
-main()
-mp.add_periodic_timer(o.periodic_timer, main)
 
 
 --[=====[
@@ -108,7 +105,7 @@ local function main()
 		small_text = "",
 		party_id = "",
 		party_size = 0,
-		party_max = 0
+		party_max = 0,
 		match_secret = "", -- Not exactly sure how to use them >.<
 		join_secret = "",
 		spectate_secret = ""
@@ -219,28 +216,33 @@ local function main()
 	local timeUp = timeNow + timeRemaining
 	
 	-- default
-	presence["start"] = nil
-	presence["end"] = timeUp
+	presence["start_time"] = nil
+	presence["end_time"] = timeUp
 
 	if url ~= nil and stream == nil then
 		presence["state"] = "(Loading)"
-		presence["start"] = math.floor(startTime)
-		presence["end"] = nil
+		presence["start_time"] = math.floor(startTime)
+		presence["end_time"] = nil
 	end
 
 	if url ~= nil and string.match(url, "%.m3u8") ~= nil then
-		presence["start"] = math.floor(startTime)
-		presence["end"] = nil
+		presence["start_time"] = math.floor(startTime)
+		presence["end_time"] = nil
 	end
 
 	if idle then
-		presence["start"] = math.floor(startTime)
-		presence["end"] = nil
+		presence["start_time"] = math.floor(startTime)
+		presence["end_time"] = nil
 	end
 
 	presence["spectate_secret"] = "https://test.com"
 
 	-- set game activity
 	presence.details = presence.details:len() > 127 and presence.details:sub(1, 127) or presence.details
-	referencesTable = gameSDK.updatePresence(referencesTable, presence)
+	discord_instance = gameSDK.updatePresence(discord_instance, presence)
 end
+
+
+-- Call main() once, and keep it calling periodically.
+main()
+mp.add_periodic_timer(o.periodic_timer, main)
