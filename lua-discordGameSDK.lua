@@ -660,12 +660,10 @@ local discordGameSDK = {} -- module table
 discordGameSDK.gcDummy = newproxy(true)
 
 local function DISCORD_REQUIRE(x)
-    if x == libGameSDK.DiscordResult_Ok then
-      assert(x == libGameSDK.DiscordResult_Ok)
-    else
-      print(string.format("oh no: %s", tostring(x)))
-      assert(x == libGameSDK.DiscordResult_Ok)
+    if x ~= libGameSDK.DiscordResult_Ok then
+      print(string.format("mpvcord encountered an error with Discord: %s", tostring(x)))
     end
+    assert(x == libGameSDK.DiscordResult_Ok)
 end
 
 local on_user_updated = ffi.cast("onUserUpdatedPtr", function(data)
@@ -751,7 +749,7 @@ function discordGameSDK.initialize(clientId)
     appPtr[0].activities = appPtr[0].core[0]:get_activity_manager()
     appPtr[0].application = appPtr[0].core[0]:get_application_manager()
     appPtr[0].users = appPtr[0].core[0]:get_user_manager()
-
+    
     discordGameSDK.runCallbacks(appPtr[0].core)
 
     -- By http://lua-users.org/lists/lua-l/2011-04/msg00516.html,
