@@ -7,7 +7,7 @@ local app
 -- set [options]
 local o = {
 	rpc_wrapper = "lua-discordGameSDK",
-	periodic_timer = 5,
+	periodic_timer = 10,
 	-- Recommendation value, to set `periodic_timer`:
 	-- value >= 1 second, if use lua-discordRPC,
 	-- value <= 15 second, because discord-rpc updates every 15 seconds.
@@ -19,7 +19,7 @@ local o = {
 	-- Valid value to set `cover_art`: (yes|no)
 	mpv_version = "yes",
 	-- Valid value to set `mpv_version`: (yes|no)
-	active = "yes",
+	active = "no",
 	-- Set Discord RPC active automatically when mpv started.
 	-- Valid value to `set_active`: (yes|no)
 	key_toggle = "D",
@@ -53,13 +53,14 @@ local function main()
 		-- state = "Second line",
 		-- details = "Third line",
 		-- start = startTime,
-		-- ["end"] = startTime + 60,
+		-- end_time = startTime + 60,
 		-- large_image = "",
 		-- large_text = "",
 		-- small_image = "",
 		-- small_text = "",
 		-- party_id = "",
-		-- party_size = {},
+		-- party_size = 0,
+		-- party_max = 0
 		-- join = "",
 		-- spectate = "",
 		-- match = "",
@@ -194,9 +195,9 @@ local function main()
 	-- set game activity
 	if o.active == "yes" then
 		presence.details = presence.details:len() > 127 and presence.details:sub(1, 127) or presence.details
-		app = gameSDK.updatePresence(app, presence)
+		referencesTable = gameSDK.updatePresence(referencesTable, presence)
 	else
-		-- gameSDK.shutdown()
+		referencesTable = gameSDK.clearPresence(referencesTable)
 	end
 end
 
@@ -224,7 +225,7 @@ mp.add_key_binding(o.key_toggle, "active-toggle", function()
 	{repeatable=false})
 
 local clientId = 798647747678568488LL
-app = gameSDK.initialize(clientId)
+referencesTable = gameSDK.initialize(clientId)
 
 -- run `main` function
 mp.add_periodic_timer(o.periodic_timer, main)
