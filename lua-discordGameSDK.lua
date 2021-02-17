@@ -654,39 +654,6 @@ local function create_params_set_default(params)
     return params
 end
 
--- typedef void (*readyPtr)(const DiscordUser* request);
--- typedef void (*disconnectedPtr)(int errorCode, const char* message);
--- typedef void (*erroredPtr)(int errorCode, const char* message);
--- typedef void (*joinGamePtr)(const char* joinSecret);
--- typedef void (*spectateGamePtr)(const char* spectateSecret);
-
--- typedef struct DiscordEventHandlers {
---     readyPtr ready;
---     disconnectedPtr disconnected;
---     erroredPtr errored;
---     joinGamePtr joinGame;
---     spectateGamePtr spectateGame;
---     joinRequestPtr joinRequest;
--- } DiscordEventHandlers;
-
--- void Discord_Initialize(const char* applicationId,
---                         DiscordEventHandlers* handlers,
---                         int autoRegister,
---                         const char* optionalSteamId);
-
--- void Discord_Shutdown(void);
-
--- void Discord_RunCallbacks(void);
-
--- void Discord_UpdatePresence(const DiscordRichPresence* presence);
-
--- void Discord_ClearPresence(void);
-
--- void Discord_Respond(const char* userid, int reply);
-
--- void Discord_UpdateHandlers(DiscordEventHandlers* handlers);
--- ]]
-
 local discordGameSDK = {} -- module table
 
 -- proxy to detect garbage collection of the module
@@ -702,17 +669,16 @@ local function DISCORD_REQUIRE(x)
 end
 
 local on_user_updated = ffi.cast("onUserUpdatedPtr", function(data)
-  local appPtr = ffi.cast("struct Application*", data)
-  local app = appPtr[0]
-  local user = ffi.new("struct DiscordUser")
-  local userPtr = ffi.new("struct DiscordUser[1]", user)
-  app.users.get_current_user(app.users, userPtr)
-  user = userPtr[0]
-  print("Displaying Discord Status on user: " .. ffi.string(user.username))
+  -- local appPtr = ffi.cast("struct Application*", data)
+  -- local app = appPtr[0]
+  -- local user = ffi.new("struct DiscordUser")
+  -- local userPtr = ffi.new("struct DiscordUser[1]", user)
+  -- app.users.get_current_user(app.users, userPtr)
+  -- user = userPtr[0]
+  -- print("Displaying Discord Status on user: " .. ffi.string(user.username))
 end)
 
 local loggerCallback = ffi.cast("loggerPtr", function (data, level, message)
-  appPtr = ffi.cast("struct Application*", data)
   print(string.format("Discord reported an error of severity %s: %s", tostring(level), ffi.string(message)))
 end)
 
@@ -745,10 +711,10 @@ function checkIntArg(arg, maxBits, argName, func, maybeNil)
             argName, func, maxVal))
 end
 
--- function wrappers
+-- This function is basically a complete line by line port
+-- from examples/c/main.c in the Game SDK. with Lua quirks
+-- here and there.
 function discordGameSDK.initialize(clientId)
-    local func = "discordGameSDK.Initialize"
-    
     local app = ffi.new("struct Application")
     local appPtr = ffi.new("struct Application[1]", app)
     ffi.C.memset(appPtr, 0, ffi.sizeof(app))
@@ -757,10 +723,7 @@ function discordGameSDK.initialize(clientId)
     local userEventsPtr = ffi.new("struct IDiscordUserEvents[1]", user_events)
     ffi.C.memset(userEventsPtr, 0, ffi.sizeof(user_events))
     userEventsPtr[0].on_current_user_update = on_user_updated
-    -- from here, it is basically a complete line by line port
-    -- from examples/c/main.c in the Game SDK
     
-    -- create a pointer to a DiscordCreateParams
     local params = ffi.new("struct DiscordCreateParams")
     local paramsPtr = ffi.new("struct DiscordCreateParams[1]", params)
     ffi.C.memset(paramsPtr, 0, ffi.sizeof(params))
@@ -783,11 +746,11 @@ function discordGameSDK.initialize(clientId)
     -- Setting app = appPtr[0] here won't work.
     appPtr[0].core = corePtrPtr[0]
 
-    appPtr[0].core.set_log_hook(appPtr[0].core, libGameSDK.DiscordLogLevel_Debug, appPtr, loggerCallback)
+    appPtr[0].core:set_log_hook(libGameSDK.DiscordLogLevel_Debug, appPtr, loggerCallback)
 
-    appPtr[0].activities = appPtr[0].core[0].get_activity_manager(appPtr[0].core)
-    appPtr[0].application = appPtr[0].core[0].get_application_manager(appPtr[0].core)
-    appPtr[0].users = appPtr[0].core[0].get_user_manager(appPtr[0].core)
+    appPtr[0].activities = appPtr[0].core[0]:get_activity_manager()
+    appPtr[0].application = appPtr[0].core[0]:get_application_manager()
+    appPtr[0].users = appPtr[0].core[0]:get_user_manager()
 
     -- Finally set app
     app = appPtr[0]
@@ -795,17 +758,29 @@ function discordGameSDK.initialize(clientId)
     local branch = ffi.new("DiscordBranch")
     local branchPtr = ffi.new("DiscordBranch[1]", branch)
     ffi.C.memset(branchPtr, 0, ffi.sizeof(branch))
-    app.application.get_current_branch(app.application, branchPtr)
+    app.application:get_current_branch(branchPtr)
     branch = branchPtr[0]
 
-    print("Detected Discord running on branch: " .. ffi.string(branch))
+    local referencesTable = {
+      app = app,
+      appPtr = appPtr,
+      userEvents = userEvents,
+      userEventsPtr = userEventsPtr,
+      corePtr = app.core,
+      corePtrPtr = corePtrPtr,
+      activities = app.activities,
+      application = app.application,
+      users = app.users
+    }
 
-    return app
+    -- print("Detected Discord running on branch: " .. ffi.string(branch))
+
+    return referencesTable
 
 end
 
-function discordGameSDK.shutdown()
-    libGameSDK.Discord_Shutdown()
+function discordGameSDK.shutdown(app)
+    app.core.destroy()
 end
 
 function discordGameSDK.runCallbacks(core)
@@ -838,7 +813,7 @@ jit.off(discordGameSDK.updatePresence)
 jit.off(discordGameSDK.runCallbacks)
 jit.off(discordGameSDK.initialize)
 
-function discordGameSDK.updatePresence(app, presence)
+function discordGameSDK.updatePresence(referencesTable, presence)
     local func = "discordGameSDK.updatePresence"
     -- checkArg(presence, "table", "presence", func)
 
@@ -864,43 +839,49 @@ function discordGameSDK.updatePresence(app, presence)
 
     -- checkIntArg(presence.instance, 8, "presence.instance", func, true)
 
+    print("all good")
+    local app = referencesTable.app
+    app.activities = app.core[0]:get_activity_manager()
+    app.application = app.core[0]:get_application_manager()
+    app.users = app.core[0]:get_user_manager()
+
     local activity = ffi.new("struct DiscordActivity")
     local activityPtr = ffi.new("struct DiscordActivity[1]", activity)
     ffi.C.memset(activityPtr, 0, ffi.sizeof(activity))
+    print("all good1")
 
-    activity.type = libGameSDK.DiscordActivityType_Watching
-    activity.details = "testing"
-    activity.state = "testing"
-    activity.assets.large_image = "radio"
-    activity.assets.large_text = "listening here"
+    activityPtr[0].type = libGameSDK.DiscordActivityType_Playing
+    activityPtr[0].state = presence.state or ""
+    activityPtr[0].details = presence.details or ""
+    activityPtr[0].timestamps.start = presence.start_time or 0
+    activityPtr[0].timestamps["end"] = presence.end_time or 0
+    activityPtr[0].assets.large_image = presence.large_image or ""
+    activityPtr[0].assets.large_text = presence.large_text or ""
+    activityPtr[0].assets.small_image = presence.small_image or ""
+    activityPtr[0].assets.small_text = presence.small_text or ""
+    activityPtr[0].party.id = presence.party_id or ""
+    activityPtr[0].party.size.current_size = presence.party_size or 0
+    activityPtr[0].party.size.max_size = presence.party_max or 0
+    activityPtr[0].secrets.match = presence.match_secret or ""
+    activityPtr[0].secrets.join = presence.join_secret or ""
+    activityPtr[0].secrets.spectate = presence.spectate_secret or ""
+    print("all good2")
 
-    activityPtr[0] = activity
     discordGameSDK.updateActivity(app.activities, activityPtr, app.core)
+    print("all good3")
     discordGameSDK.runCallbacks(app.core)
-    
-    return app
-    -- local cpresence = ffi.new("struct DiscordRichPresence")
-    -- cpresence.state = presence.state
-    -- cpresence.details = presence.details
-    -- cpresence.startTimestamp = presence.startTimestamp or 0
-    -- cpresence.endTimestamp = presence.endTimestamp or 0
-    -- cpresence.largeImageKey = presence.largeImageKey
-    -- cpresence.largeImageText = presence.largeImageText
-    -- cpresence.smallImageKey = presence.smallImageKey
-    -- cpresence.smallImageText = presence.smallImageText
-    -- cpresence.partyId = presence.partyId
-    -- cpresence.partySize = presence.partySize or 0
-    -- cpresence.partyMax = presence.partyMax or 0
-    -- cpresence.matchSecret = presence.matchSecret
-    -- cpresence.joinSecret = presence.joinSecret
-    -- cpresence.spectateSecret = presence.spectateSecret
-    -- cpresence.instance = presence.instance or 0
 
-    -- libGameSDK.Discord_UpdatePresence(cpresence)
+    print("all good4")
+
+    return referencesTable
 end
 
-function discordGameSDK.clearPresence()
-    libGameSDK.Discord_ClearPresence()
+function discordGameSDK.clearPresence(referencesTable)
+  local app = referencesTable.app
+  print("gucci1")
+  print(app)
+  app.activities:clear_activity(nil, nil)
+  return referencesTable
 end
 
 -- garbage collection callback
