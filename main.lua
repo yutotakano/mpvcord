@@ -7,7 +7,7 @@ local app
 --[=====[
 	Main Options.
 	Configure these as you wish. You can also pass these as command-line 
-	arguments by e.g. --script-opts=mpvcord-active=yes 
+	arguments by e.g. --script-opts=mpvcord-activate=yes 
 
 	periodic_timer: How often the script communicates with Game SDK.
 									Recommended 1 <= x <= 15.
@@ -17,10 +17,9 @@ local app
 								  (yes | no)
 	mpv_version:    Whether to show the mpv version. 
 								  (yes | no)
-	activate:       Whether to activate script on launch. 
+	active:         Whether to activate script on launch. 
 								  (yes | no)
 	key_toggle:     Key to toggle script. Can also be set in input.conf.
-	client_id:      Discord developer client ID. Keep the LL.
 --]=====]
 
 local o = {
@@ -29,16 +28,16 @@ local o = {
 	loop_info = "yes",
 	mpv_version = "yes",
 	active = "no",
-	key_toggle = "D",
-	client_id = 798647747678568488LL
+	key_toggle = "D"
 }
+
+client_id = 798647747678568488LL
 
 
 
 --[=====[
 	Setup.
-	Gets necessary information to be used later. Also sets up the
-	keybinding according to options. 
+	Reads option files, sets keybinding, and initialises Discord. 
 --]=====]
 
 options.read_options(o)
@@ -60,6 +59,7 @@ msg.verbose(string.format("loop_info      : %s", o.loop_info))
 msg.verbose(string.format("mpv_version    : %s", o.mpv_version))
 msg.verbose(string.format("active         : %s", o.active))
 msg.verbose(string.format("key_toggle     : %s", o.key_toggle))
+msg.verbose(string.format("client_id      : %s", client_id))
 
 local mpv_version = mp.get_property("mpv-version"):sub(5)
 
@@ -76,7 +76,7 @@ end, {
 })
 
 -- Initialise Discord Game SDK and keep its instance
-discord_instance = gameSDK.initialize(o.client_id)
+discord_instance = gameSDK.initialize(client_id)
 
 
 
@@ -187,6 +187,7 @@ local function main()
 			- If the path matches any specific URL scheme, it sets the image and text
 			  accordingly. Most of it is for my personal use.
 	--]=====]
+	
 	local file_path = mp.get_property("path") -- URL, or file path
 	local media_title = mp.get_property("media-title")
 	local metadata_title = mp.get_property_native("metadata/by-key/Title")

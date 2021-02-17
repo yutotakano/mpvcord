@@ -1,0 +1,26 @@
+# Place this file as script-opts/mpvcord.conf in mpv's configuration
+# directory. This is e.g. %appdata%/mpv/script-opts/mpvcord.conf.
+
+# This file will overwrite any default options set in main.lua.
+# Additionally, even these options can be overwritten by passing 
+# command-line arguments, e.g. --script-opts=mpvcord-activate=yes 
+#
+#	periodic_timer: How often the script communicates with Game SDK.
+#									Recommended 1 <= x <= 15.
+#	playlist_info:  Whether to display the playlist information. 
+#								  (yes | no)
+#	loop_info:      Whether to display your loop status. 
+#								  (yes | no)
+#	mpv_version:    Whether to show the mpv version. 
+#								  (yes | no)
+#	active:         Whether to activate script on launch. 
+#								  (yes | no)
+#	key_toggle:     Key to toggle script. Can also be set in input.conf.
+#
+
+periodic_timer=2
+playlist_info=yes
+loop_info=yes
+mpv_version=yes
+active=no
+key_toggle=D
