@@ -752,6 +752,8 @@ function discordGameSDK.initialize(clientId)
     appPtr[0].application = appPtr[0].core[0]:get_application_manager()
     appPtr[0].users = appPtr[0].core[0]:get_user_manager()
 
+    discordGameSDK.runCallbacks(appPtr[0].core)
+
     -- By http://lua-users.org/lists/lua-l/2011-04/msg00516.html,
     -- The LuaJIT FFI Garbage Collector doesn't follow pointers when
     -- determining which references to keep. Therefore, "you must
@@ -764,11 +766,11 @@ function discordGameSDK.initialize(clientId)
       appPtr = appPtr,
       userEvents = userEvents,
       userEventsPtr = userEventsPtr,
-      corePtr = app.core,
+      corePtr = appPtr[0].core,
       corePtrPtr = corePtrPtr,
-      activities = app.activities,
-      application = app.application,
-      users = app.users
+      activities = appPtr[0].activities,
+      application = appPtr[0].application,
+      users = appPtr[0].users
     }
 
     return referencesTable
