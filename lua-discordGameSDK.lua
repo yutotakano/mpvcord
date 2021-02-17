@@ -839,7 +839,6 @@ function discordGameSDK.updatePresence(referencesTable, presence)
 
     -- checkIntArg(presence.instance, 8, "presence.instance", func, true)
 
-    print("all good")
     local app = referencesTable.app
     app.activities = app.core[0]:get_activity_manager()
     app.application = app.core[0]:get_application_manager()
@@ -848,7 +847,6 @@ function discordGameSDK.updatePresence(referencesTable, presence)
     local activity = ffi.new("struct DiscordActivity")
     local activityPtr = ffi.new("struct DiscordActivity[1]", activity)
     ffi.C.memset(activityPtr, 0, ffi.sizeof(activity))
-    print("all good1")
 
     activityPtr[0].type = libGameSDK.DiscordActivityType_Playing
     activityPtr[0].state = presence.state or ""
@@ -865,22 +863,23 @@ function discordGameSDK.updatePresence(referencesTable, presence)
     activityPtr[0].secrets.match = presence.match_secret or ""
     activityPtr[0].secrets.join = presence.join_secret or ""
     activityPtr[0].secrets.spectate = presence.spectate_secret or ""
-    print("all good2")
-
+    
     discordGameSDK.updateActivity(app.activities, activityPtr, app.core)
-    print("all good3")
     discordGameSDK.runCallbacks(app.core)
 
-    print("all good4")
-
+    -- Make sure garbage memory is collected, or otherwise
+    -- this script will keep on increasming RAM usage by about 8KB
+    -- everytime updateActivity or clearActivity is run.
+    collectgarbage()
+    collectgarbage()
     return referencesTable
 end
 
 function discordGameSDK.clearPresence(referencesTable)
   local app = referencesTable.app
-  print("gucci1")
-  print(app)
   app.activities:clear_activity(nil, nil)
+  collectgarbage()
+  collectgarbage()
   return referencesTable
 end
 
