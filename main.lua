@@ -34,6 +34,7 @@ local o = {
 }
 
 
+
 --[=====[
 	Setup.
 	Gets necessary information to be used later. Also sets up the
@@ -111,16 +112,26 @@ local function main()
 		spectate_secret = ""
 	}
 
-	-- Set images
+	-- Set values according to player state
 	local idle = mp.get_property_bool("idle-active")
 	local coreIdle = mp.get_property_bool("core-idle")
 	local pausedFC = mp.get_property_bool("paused-for-cache")
 	local pause = mp.get_property_bool("pause")
 	local play = coreIdle and false or true
+	
+	local timeNow = os.time(os.date("*t"))
+	local timeRemaining = os.time(os.date("*t", mp.get_property("playtime-remaining")))
+	local timeUp = timeNow + timeRemaining
+	
+	presence["start_time"] = nil
+	presence["end_time"] = timeUp
+	
 	if idle then
 		presence["state"] = "(Idle)"
 		presence["small_image"] = "player_stop"
 		presence["small_text"] = "Idle"
+		presence["start_time"] = math.floor(startTime)
+		presence["end_time"] = nil
 	elseif pausedFC then
 		presence["state"] = ""
 		presence["small_image"] = "player_pause"
@@ -164,78 +175,67 @@ local function main()
 		presence["small_text"] = ("%s%s%s"):format(presence["small_text"], playlist, loop)
 	end
 
-	-- Set information as the file name, or if it exists, artist/album names
-	local url = mp.get_property("path")
-	local stream = mp.get_property("stream-path")
-	local mediaTitle = mp.get_property("media-title")
-	local metadataTitle = mp.get_property_native("metadata/by-key/Title")
-	local metadataArtist = mp.get_property_native("metadata/by-key/Artist")
-	local metadataAlbum = mp.get_property_native("metadata/by-key/Album")
 	
-	presence["details"] = mediaTitle
-	if metadataTitle ~= nil then
-		presence["details"] = metadataTitle
-	end
-	if metadataArtist ~= nil then
-		presence["details"] = ("%s\nby %s"):format(presence["details"], metadataArtist)
-	end
-	if metadataAlbum ~= nil then
-		presence["details"] = ("%s\non %s"):format(presence["details"], metadataAlbum)
-	end
-	if presence["details"] == nil then
-		presence["details"] = "No file"
+	--[=====[
+		Conditionals.
+		Here is where the customisability will shine! Set various presence values 
+		using the metadata available. See https://mpv.io/manual/master#property-list
+		for properties you can use by mp.get_property()
+
+		By default:
+		  - The media title is set as the detail, plus any artist/album if it exists
+			- If the path matches any specific URL scheme, it sets the image and text
+			  accordingly. Most of it is for my personal use.
+	--]=====]
+	local file_path = mp.get_property("path") -- URL, or file path
+	local media_title = mp.get_property("media-title")
+	local metadata_title = mp.get_property_native("metadata/by-key/Title")
+	local metadata_artist = mp.get_property_native("metadata/by-key/Artist")
+	local metadata_album = mp.get_property_native("metadata/by-key/Album")
+	
+	presence["details"] = media_title
+	if metadata_title ~= nil then
+		presence["details"] = metadata_title
 	end
 
-	if url ~= nil then
+	if file_path ~= nil then
 		-- checking protocol: http, https
-		if string.match(url, "^https?://.*") ~= nil then
+		if string.match(file_path, "^https?://.*") ~= nil then
 			presence["large_image"] = "internet"
 			presence["large_text"] = "Streaming"
 		end
 
-		if string.match(mediaTitle, "Informatics") ~= nil then
+		if string.match(media_title, "Informatics") ~= nil then
 			presence["large_image"] = "informatics_logo"
 			presence["large_text"] = "UoE Informatics"
 
-		elseif string.match(url, "r1%-01%.m3u8") ~= nil then
+		elseif string.match(file_path, "r1%-01%.m3u8") ~= nil then
 			presence["large_image"] = "radio"
 			presence["large_text"] = "Radio"
 			presence["details"] = "Listening to NHK R1"
 			presence["state"] = "" -- hide (Playing 1x) because it is unnecessary
+			presence["start_time"] = math.floor(startTime)
+			presence["end_time"] = nil
 
-		elseif string.match(url, "www.youtube.com/watch%?v=([a-zA-Z0-9-_]+)&?.*$") ~= nil or string.match(url, "youtu.be/([a-zA-Z0-9-_]+)&?.*$") ~= nil then
+		elseif string.match(file_path, "www.youtube.com/watch%?v=([a-zA-Z0-9-_]+)&?.*$") ~= nil
+		    or string.match(file_path, "youtu.be/([a-zA-Z0-9-_]+)&?.*$") ~= nil then
 			presence["large_image"] = "youtube"
 			presence["large_text"] = "YouTube"
+		
+		end
+
+		if metadata_artist ~= nil then
+			presence["state"] = ("by %s"):format(metadata_artist)
+		end
+		
+		if metadata_album ~= nil then
+			presence["details"] = ("%s //\n(%s)"):format(presence["details"], metadata_album)
 		end
 	end
 
-
-	-- set time
-	local timeNow = os.time(os.date("*t"))
-	local timeRemaining = os.time(os.date("*t", mp.get_property("playtime-remaining")))
-	local timeUp = timeNow + timeRemaining
-	
-	-- default
-	presence["start_time"] = nil
-	presence["end_time"] = timeUp
-
-	if url ~= nil and stream == nil then
-		presence["state"] = "(Loading)"
-		presence["start_time"] = math.floor(startTime)
-		presence["end_time"] = nil
+	if presence["details"] == nil then
+		presence["details"] = "No file"
 	end
-
-	if url ~= nil and string.match(url, "%.m3u8") ~= nil then
-		presence["start_time"] = math.floor(startTime)
-		presence["end_time"] = nil
-	end
-
-	if idle then
-		presence["start_time"] = math.floor(startTime)
-		presence["end_time"] = nil
-	end
-
-	presence["spectate_secret"] = "https://test.com"
 
 	-- set game activity
 	presence.details = presence.details:len() > 127 and presence.details:sub(1, 127) or presence.details
