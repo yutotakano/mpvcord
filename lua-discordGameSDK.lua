@@ -638,19 +638,19 @@ struct Application {
 -- Implement set default function in Lua because
 -- somehow I couldn't get FFI to call the static method
 -- DiscordCreateParamsSetDefault
-local function create_params_set_default(params)
-    params[0].application_version = libGameSDK.DISCORD_APPLICATION_MANAGER_VERSION
-    params[0].user_version = libGameSDK.DISCORD_USER_MANAGER_VERSION
-    params[0].image_version = libGameSDK.DISCORD_IMAGE_MANAGER_VERSION
-    params[0].activity_version = libGameSDK.DISCORD_ACTIVITY_MANAGER_VERSION
-    params[0].relationship_version = libGameSDK.DISCORD_RELATIONSHIP_MANAGER_VERSION
-    params[0].lobby_version = libGameSDK.DISCORD_LOBBY_MANAGER_VERSION
-    params[0].network_version = libGameSDK.DISCORD_NETWORK_MANAGER_VERSION
-    params[0].overlay_version = libGameSDK.DISCORD_OVERLAY_MANAGER_VERSION
-    params[0].storage_version = libGameSDK.DISCORD_STORAGE_MANAGER_VERSION
-    params[0].store_version = libGameSDK.DISCORD_STORE_MANAGER_VERSION
-    params[0].voice_version = libGameSDK.DISCORD_VOICE_MANAGER_VERSION
-    params[0].achievement_version = libGameSDK.DISCORD_ACHIEVEMENT_MANAGER_VERSION
+local function create_params_set_default(paramsPtr)
+    paramsPtr[0].application_version = libGameSDK.DISCORD_APPLICATION_MANAGER_VERSION
+    paramsPtr[0].user_version = libGameSDK.DISCORD_USER_MANAGER_VERSION
+    paramsPtr[0].image_version = libGameSDK.DISCORD_IMAGE_MANAGER_VERSION
+    paramsPtr[0].activity_version = libGameSDK.DISCORD_ACTIVITY_MANAGER_VERSION
+    paramsPtr[0].relationship_version = libGameSDK.DISCORD_RELATIONSHIP_MANAGER_VERSION
+    paramsPtr[0].lobby_version = libGameSDK.DISCORD_LOBBY_MANAGER_VERSION
+    paramsPtr[0].network_version = libGameSDK.DISCORD_NETWORK_MANAGER_VERSION
+    paramsPtr[0].overlay_version = libGameSDK.DISCORD_OVERLAY_MANAGER_VERSION
+    paramsPtr[0].storage_version = libGameSDK.DISCORD_STORAGE_MANAGER_VERSION
+    paramsPtr[0].store_version = libGameSDK.DISCORD_STORE_MANAGER_VERSION
+    paramsPtr[0].voice_version = libGameSDK.DISCORD_VOICE_MANAGER_VERSION
+    paramsPtr[0].achievement_version = libGameSDK.DISCORD_ACHIEVEMENT_MANAGER_VERSION
     return params
 end
 
@@ -714,6 +714,11 @@ end
 -- This function is basically a complete line by line port
 -- from examples/c/main.c in the Game SDK. with Lua quirks
 -- here and there.
+
+-- Pass by reference kinda works but kinda doesn't, and
+-- so user_events != userEventsPtr[0], and app != appPtr[0].
+-- The desired one is always [0], so we simply do not use
+-- the original objects after a pointer to them have been made.
 function discordGameSDK.initialize(clientId)
     local app = ffi.new("struct Application")
     local appPtr = ffi.new("struct Application[1]", app)
@@ -722,28 +727,23 @@ function discordGameSDK.initialize(clientId)
     local user_events = ffi.new("struct IDiscordUserEvents")
     local userEventsPtr = ffi.new("struct IDiscordUserEvents[1]", user_events)
     ffi.C.memset(userEventsPtr, 0, ffi.sizeof(user_events))
+    
     userEventsPtr[0].on_current_user_update = on_user_updated
     
     local params = ffi.new("struct DiscordCreateParams")
     local paramsPtr = ffi.new("struct DiscordCreateParams[1]", params)
     ffi.C.memset(paramsPtr, 0, ffi.sizeof(params))
     create_params_set_default(paramsPtr)
-    params = paramsPtr[0]
-    params.client_id = clientId
-    params.flags = libGameSDK.DiscordCreateFlags_Default
-    params.event_data = appPtr
-    params.user_events = userEventsPtr
+    paramsPtr[0].client_id = clientId
+    paramsPtr[0].flags = libGameSDK.DiscordCreateFlags_Default
+    paramsPtr[0].event_data = appPtr
+    paramsPtr[0].user_events = userEventsPtr
     
     local corePtrPtr = ffi.new("struct IDiscordCore*[1]", app.core)
     ffi.C.memset(corePtrPtr, 0, ffi.sizeof(app.core))
 
     DISCORD_REQUIRE(libGameSDK.DiscordCreate(libGameSDK.DISCORD_VERSION, paramsPtr, corePtrPtr))
 
-    -- Since pass by reference kinda doesn't work but kinda does,
-    -- we operate on the pointer's point. This makes sure that
-    -- param.event_data is also updated, so we can access
-    -- app.users in any event callback.
-    -- Setting app = appPtr[0] here won't work.
     appPtr[0].core = corePtrPtr[0]
 
     appPtr[0].core:set_log_hook(libGameSDK.DiscordLogLevel_Debug, appPtr, loggerCallback)
@@ -752,17 +752,15 @@ function discordGameSDK.initialize(clientId)
     appPtr[0].application = appPtr[0].core[0]:get_application_manager()
     appPtr[0].users = appPtr[0].core[0]:get_user_manager()
 
-    -- Finally set app
-    app = appPtr[0]
-    
-    local branch = ffi.new("DiscordBranch")
-    local branchPtr = ffi.new("DiscordBranch[1]", branch)
-    ffi.C.memset(branchPtr, 0, ffi.sizeof(branch))
-    app.application:get_current_branch(branchPtr)
-    branch = branchPtr[0]
-
+    -- By http://lua-users.org/lists/lua-l/2011-04/msg00516.html,
+    -- The LuaJIT FFI Garbage Collector doesn't follow pointers when
+    -- determining which references to keep. Therefore, "you must
+    -- not store the only reference to an object allocated with
+    -- ffi.new() as a pointer in a struct field."
+    -- Hence, a referencesTable is passed around instead of just 
+    -- the app, although none of the keys are used apart from app.
     local referencesTable = {
-      app = app,
+      app = appPtr[0],
       appPtr = appPtr,
       userEvents = userEvents,
       userEventsPtr = userEventsPtr,
@@ -772,8 +770,6 @@ function discordGameSDK.initialize(clientId)
       application = app.application,
       users = app.users
     }
-
-    -- print("Detected Discord running on branch: " .. ffi.string(branch))
 
     return referencesTable
 
@@ -801,13 +797,9 @@ local updateActivityCallback = ffi.cast("callbackPtr", function(callback_data, d
 end)
 
 -- http://luajit.org/ext_ffi_semantics.html#callback :
--- It is not allowed, to let an FFI call into a C function (runCallbacks)
--- get JIT-compiled, which in turn calls a callback, calling into Lua again (e.g. discordGameSDK.ready).
--- Usually this attempt is caught by the interpreter first and the C function
--- is blacklisted for compilation.
--- solution:
--- "Then you'll need to manually turn off JIT-compilation with jit.off() for
--- the surrounding Lua function that invokes such a message polling function."
+-- It is by default not allowed for C to callback into Lua, when
+-- Lua had originally called into C. jit.off() allows it, so any
+-- function that calls a callback needs to be wrapped in it.
 jit.off(discordGameSDK.updateActivity)
 jit.off(discordGameSDK.updatePresence)
 jit.off(discordGameSDK.runCallbacks)
@@ -883,16 +875,12 @@ function discordGameSDK.clearPresence(referencesTable)
   return referencesTable
 end
 
--- garbage collection callback
+-- Attach a finaliser to run when discordGameSDK is garbage
+-- collected. This happens when mpv quits.
 getmetatable(discordGameSDK.gcDummy).__gc = function()
-  print("testing")  
-  -- discordGameSDK.shutdown()
-    -- ready_proxy:free()
-    -- disconnected_proxy:free()
-    -- errored_proxy:free()
-    -- joinGame_proxy:free()
-    -- spectateGame_proxy:free()
-    -- joinRequest_proxy:free()
+  discordGameSDK.shutdown()
+  updateActivityCallback:free()
+  loggerCallback:free()
 end
 
 return discordGameSDK
