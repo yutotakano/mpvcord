@@ -1,4 +1,5 @@
 local ffi = require "ffi"
+local msg = require "mp.msg"
 local libGameSDK = ffi.load("discord_game_sdk")
 
 ffi.cdef[[
@@ -666,11 +667,11 @@ local on_user_updated = ffi.cast("onUserUpdatedPtr", function(data)
   local userPtr = ffi.new("struct DiscordUser[1]", user)
   app.users.get_current_user(app.users, userPtr)
   user = userPtr[0]
-  print("Displaying Discord Status on user: " .. ffi.string(user.username))
+  msg.verbose("Displaying Discord Status on user: " .. ffi.string(user.username))
 end)
 
 local loggerCallback = ffi.cast("loggerPtr", function (data, level, message)
-  print(string.format("Discord reported an error of severity %s: %s", tostring(level), ffi.string(message)))
+  msg.info(string.format("Discord reported an error of severity %s: %s", tostring(level), ffi.string(message)))
 end)
 
 -- Helper function to make sure the input is a given type
@@ -796,18 +797,17 @@ function discordGameSDK.runCallbacks(core)
   return core.run_callbacks(core)
 end
 
+local updateActivityCallback = ffi.cast("callbackPtr", function(callback_data, discord_result)
+  if discord_result == libGameSDK.DiscordResult_Ok then
+    msg.verbose("Successfully updated Discord activity")
+  else 
+    msg.verbose("Failed updating Discord activity: " .. discord_result)
+  end
+end)
+
 function discordGameSDK.updateActivity(activities, activity, core)
   activities.update_activity(activities, activity, core, updateActivityCallback)
 end
-
--- Somehow this isn't being called but meh
-local updateActivityCallback = ffi.cast("callbackPtr", function(callback_data, discord_result)
-  if discord_result == libGameSDK.DiscordResult_Ok then
-    print("succeeded")
-  else 
-    print("failed updating activity")
-  end
-end)
 
 -- http://luajit.org/ext_ffi_semantics.html#callback :
 -- It is by default not allowed for C to callback into Lua, when
