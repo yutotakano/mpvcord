@@ -659,21 +659,14 @@ local discordGameSDK = {} -- module table
 -- proxy to detect garbage collection of the module
 discordGameSDK.gcDummy = newproxy(true)
 
-local function DISCORD_REQUIRE(x)
-  if x ~= libGameSDK.DiscordResult_Ok then
-    print(string.format("mpvcord encountered an error with Discord: %s", tostring(x)))
-  end
-  assert(x == libGameSDK.DiscordResult_Ok)
-end
-
 local on_user_updated = ffi.cast("onUserUpdatedPtr", function(data)
-  -- local appPtr = ffi.cast("struct Application*", data)
-  -- local app = appPtr[0]
-  -- local user = ffi.new("struct DiscordUser")
-  -- local userPtr = ffi.new("struct DiscordUser[1]", user)
-  -- app.users.get_current_user(app.users, userPtr)
-  -- user = userPtr[0]
-  -- print("Displaying Discord Status on user: " .. ffi.string(user.username))
+  local appPtr = ffi.cast("struct Application*", data)
+  local app = appPtr[0]
+  local user = ffi.new("struct DiscordUser")
+  local userPtr = ffi.new("struct DiscordUser[1]", user)
+  app.users.get_current_user(app.users, userPtr)
+  user = userPtr[0]
+  print("Displaying Discord Status on user: " .. ffi.string(user.username))
 end)
 
 local loggerCallback = ffi.cast("loggerPtr", function (data, level, message)
@@ -742,24 +735,28 @@ function discordGameSDK.initialize(clientId)
   ffi.C.memset(paramsPtr, 0, ffi.sizeof(params))
   create_params_set_default(paramsPtr)
   paramsPtr[0].client_id = clientId
-  paramsPtr[0].flags = libGameSDK.DiscordCreateFlags_Default
+  paramsPtr[0].flags = libGameSDK.DiscordCreateFlags_NoRequireDiscord
   paramsPtr[0].event_data = appPtr
   paramsPtr[0].user_events = userEventsPtr
     
   local corePtrPtr = ffi.new("struct IDiscordCore*[1]", app.core)
   ffi.C.memset(corePtrPtr, 0, ffi.sizeof(app.core))
 
-  DISCORD_REQUIRE(libGameSDK.DiscordCreate(libGameSDK.DISCORD_VERSION, paramsPtr, corePtrPtr))
+  -- Attempt to create a Discord instance
+  x = libGameSDK.DiscordCreate(libGameSDK.DISCORD_VERSION, paramsPtr, corePtrPtr)
+  running = x == libGameSDK.DiscordResult_Ok
 
-  appPtr[0].core = corePtrPtr[0]
+  if running then
+    appPtr[0].core = corePtrPtr[0]
 
-  appPtr[0].core:set_log_hook(libGameSDK.DiscordLogLevel_Debug, appPtr, loggerCallback)
+    appPtr[0].core:set_log_hook(libGameSDK.DiscordLogLevel_Debug, appPtr, loggerCallback)
 
-  appPtr[0].activities = appPtr[0].core[0]:get_activity_manager()
-  appPtr[0].application = appPtr[0].core[0]:get_application_manager()
-  appPtr[0].users = appPtr[0].core[0]:get_user_manager()
-    
-  discordGameSDK.runCallbacks(appPtr[0].core)
+    appPtr[0].activities = appPtr[0].core[0]:get_activity_manager()
+    appPtr[0].application = appPtr[0].core[0]:get_application_manager()
+    appPtr[0].users = appPtr[0].core[0]:get_user_manager()
+
+    discordGameSDK.runCallbacks(appPtr[0].core)
+  end
 
     -- By http://lua-users.org/lists/lua-l/2011-04/msg00516.html,
     -- The LuaJIT FFI Garbage Collector doesn't follow pointers when
@@ -769,6 +766,8 @@ function discordGameSDK.initialize(clientId)
     -- Hence, a referencesTable is passed around instead of just 
     -- the app, although none of the keys are used apart from app.
   local referencesTable = {
+    running = running,
+    clientId = clientId,
     app = appPtr[0],
     appPtr = appPtr,
     userEvents = userEvents,
@@ -780,6 +779,11 @@ function discordGameSDK.initialize(clientId)
     users = appPtr[0].users
   }
 
+  -- Prevent memory leak when called multiple times by explicitly
+  -- calling the garbage collector (twice, because some SO user said so)
+  collectgarbage()
+  collectgarbage()
+
   return referencesTable
 
 end
@@ -789,7 +793,7 @@ function discordGameSDK.shutdown(app)
 end
 
 function discordGameSDK.runCallbacks(core)
-  DISCORD_REQUIRE(core.run_callbacks(core))
+  return core.run_callbacks(core)
 end
 
 function discordGameSDK.updateActivity(activities, activity, core)
@@ -815,6 +819,15 @@ jit.off(discordGameSDK.runCallbacks)
 jit.off(discordGameSDK.initialize)
 
 function discordGameSDK.updatePresence(referencesTable, presence)
+  -- If Discord isn't running, try initialising.
+  -- If it still fails, then return early.
+  if not referencesTable.running then
+    referencesTable = discordGameSDK.initialize(referencesTable.clientId)
+    if not referencesTable.running then
+      return referencesTable
+    end
+  end
+
   local func = "discordGameSDK.updatePresence"
   -- checkArg(presence, "table", "presence", func)
 
@@ -866,13 +879,15 @@ function discordGameSDK.updatePresence(referencesTable, presence)
   activityPtr[0].secrets.spectate = presence.spectate_secret or ""
     
   discordGameSDK.updateActivity(app.activities, activityPtr, app.core)
-  discordGameSDK.runCallbacks(app.core)
+  x = discordGameSDK.runCallbacks(app.core)
+  running = x == libGameSDK.DiscordResult_Ok
 
   -- Make sure garbage memory is collected, or otherwise
   -- this script will keep on increasming RAM usage by about 8KB
   -- everytime updateActivity or clearActivity is run.
   collectgarbage()
   collectgarbage()
+  referencesTable.running = running
   return referencesTable
 end
 
