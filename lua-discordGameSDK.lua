@@ -667,20 +667,25 @@ local on_user_updated = ffi.cast("onUserUpdatedPtr", function(data)
   local userPtr = ffi.new("struct DiscordUser[1]", user)
   app.users.get_current_user(app.users, userPtr)
   user = userPtr[0]
-  msg.verbose("Displaying Discord Status on user: " .. ffi.string(user.username))
+  msg.verbose(string.format("Displaying Discord Status on user: %s#%s",
+                            ffi.string(user.username),
+                            tostring(user.discriminator)))
 end)
 
 local loggerCallback = ffi.cast("loggerPtr", function (data, level, message)
-  msg.info(string.format("Discord reported an error of severity %s: %s", tostring(level), ffi.string(message)))
+  msg.info(string.format("Discord reported an error of severity %s: %s",
+                         tostring(level),
+                         ffi.string(message)))
 end)
 
 -- Helper function to make sure the input is a given type
 function checkArg(arg, argType, argName, func, maybeNil)
   assert(
     type(arg) == argType or (maybeNil and arg == nil),
-    string.format(
-      "Argument \"%s\" to function \"%s\" has to be of type \"%s\"",
-      argName, func, argType)
+    string.format("Argument \"%s\" to function \"%s\" has to be of type \"%s\"",
+                  argName,
+                  func,
+                  argType)
   )
 end
 
@@ -689,9 +694,10 @@ function checkStrArg(arg, maxLen, argName, func, maybeNil)
   if maxLen then
     assert(
       type(arg) == "string" and arg:len() <= maxLen or (maybeNil and arg == nil),
-      string.format(
-        "Argument \"%s\" of function \"%s\" has to be of type string with maximum length %d",
-        argName, func, maxLen)
+      string.format("Argument \"%s\" of function \"%s\" has to be of type string with maximum length %d",
+                    argName,
+                    func,
+                    maxLen)
     )
   else
     checkArg(arg, "string", argName, func, true)
@@ -706,9 +712,10 @@ function checkIntArg(arg, maxBits, argName, func, maybeNil)
     type(arg) == "number" and math.floor(arg) == arg
     and arg < maxVal and arg >= -maxVal
     or (maybeNil and arg == nil),
-    string.format(
-      "Argument \"%s\" of function \"%s\" has to be a whole number <= %d",
-      argName, func, maxVal)
+    string.format("Argument \"%s\" of function \"%s\" has to be a whole number <= %d",
+                  argName,
+                  func,
+                  maxVal)
   )
 end
 
