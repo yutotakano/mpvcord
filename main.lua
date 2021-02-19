@@ -211,7 +211,11 @@ local function main()
     if string.match(media_title, "Informatics") ~= nil then
       presence["large_image"] = "informatics_logo"
       presence["large_text"] = "UoE Informatics"
-
+    
+    elseif string.match(media_title, "Star Wars") ~= nil then
+      presence["large_image"] = "starwars"
+      presence["large_text"] = "Star Wars"
+    
     elseif string.match(file_path, "r1%-01%.m3u8") ~= nil then
       presence["large_image"] = "radio"
       presence["large_text"] = "Radio"
@@ -242,9 +246,8 @@ local function main()
 
   -- set game activity
   presence.details = presence.details:len() > 127 and presence.details:sub(1, 127) or presence.details
-  msg.verbose("Setting discord presence...")
+  msg.verbose("Calling Game SDK...")
   discord_instance = gameSDK.updatePresence(discord_instance, presence)
-  msg.verbose("Discord presence set.")
 end
 
 
