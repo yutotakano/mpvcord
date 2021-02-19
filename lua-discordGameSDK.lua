@@ -669,7 +669,7 @@ local on_user_updated = ffi.cast("onUserUpdatedPtr", function(data)
   user = userPtr[0]
   msg.verbose(string.format("Displaying Discord Status on user: %s#%s",
                             ffi.string(user.username),
-                            tostring(user.discriminator)))
+                            ffi.string(user.discriminator)))
 end)
 
 local loggerCallback = ffi.cast("loggerPtr", function (data, level, message)
