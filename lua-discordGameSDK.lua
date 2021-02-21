@@ -899,6 +899,11 @@ function discordGameSDK.updatePresence(referencesTable, presence)
 end
 
 function discordGameSDK.clearPresence(referencesTable)
+  -- If Discord isn't running, don't even try.
+  if not referencesTable.running then
+    return referencesTable
+  end
+
   local app = referencesTable.app
   app.activities:clear_activity(nil, nil)
   collectgarbage()
