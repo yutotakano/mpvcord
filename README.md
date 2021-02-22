@@ -17,7 +17,7 @@ These are some ideas of how to customise the script:
 
 It is assumed that the user of this script has basic Lua knowledge (just the syntax is fine), and knows their way around their file system.
 
-1. Download the Game SDK from [the official page](https://discord.com/developers/docs/game-sdk/sdk-starter-guide).
+1. Download the Game SDK from [the official page](https://discord.com/developers/docs/game-sdk/sdk-starter-guide). This unfortunately cannot be included in this repository due to legal constraints.
 2. In the `lib/` folder in the ZIP, go into your distribution `x86` or `x86_64`, and copy all library files inside it (or just the necessary ones if you're sure). Paste them into mpv's installation directory. This is *not* your user configuration directory, but where the mpv binary lies (e.g. `C:/Program Files/mpv/discord_game_sdk.dll`).
 3. Download or clone this repository and place both main.lua and the SDK lua files into `scripts/mpvcord` of your mpv configuration directory. E.g. `%appdata%/mpv/scripts/mpvcord/main.lua`.
 4. Skim through main.lua and customise any of the code as you want. The SDK lua file needs no configuration.
