@@ -836,29 +836,28 @@ function discordGameSDK.updatePresence(referencesTable, presence)
   end
 
   local func = "discordGameSDK.updatePresence"
-  -- checkArg(presence, "table", "presence", func)
+
+  checkArg(presence, "table", "presence", func)
 
   -- -- -1 for string length because of 0-termination
-  -- checkStrArg(presence.state, 127, "presence.state", func, true)
-  -- checkStrArg(presence.details, 127, "presence.details", func, true)
+  checkStrArg(presence.state, 127, "presence.state", func, true)
+  checkStrArg(presence.details, 127, "presence.details", func, true)
 
-  -- checkIntArg(presence.startTimestamp, 64, "presence.startTimestamp", func, true)
-  -- checkIntArg(presence.endTimestamp, 64, "presence.endTimestamp", func, true)
+  checkIntArg(presence.start_time, 64, "presence.start_time", func, true)
+  checkIntArg(presence.end_time, 64, "presence.end_time", func, true)
 
-  -- checkStrArg(presence.largeImageKey, 31, "presence.largeImageKey", func, true)
-  -- checkStrArg(presence.largeImageText, 127, "presence.largeImageText", func, true)
-  -- checkStrArg(presence.smallImageKey, 31, "presence.smallImageKey", func, true)
-  -- checkStrArg(presence.smallImageText, 127, "presence.smallImageText", func, true)
-  -- checkStrArg(presence.partyId, 127, "presence.partyId", func, true)
+  checkStrArg(presence.large_image, 127, "presence.large_image", func, true)
+  checkStrArg(presence.large_text, 127, "presence.large_text", func, true)
+  checkStrArg(presence.small_image, 127, "presence.small_image", func, true)
+  checkStrArg(presence.small_text, 127, "presence.small_text", func, true)
 
-  -- checkIntArg(presence.partySize, 32, "presence.partySize", func, true)
-  -- checkIntArg(presence.partyMax, 32, "presence.partyMax", func, true)
+  checkStrArg(presence.party_id, 127, "presence.party_id", func, true)
+  checkIntArg(presence.party_size, 32, "presence.party_size", func, true)
+  checkIntArg(presence.party_max, 32, "presence.party_max", func, true)
 
-  -- checkStrArg(presence.matchSecret, 127, "presence.matchSecret", func, true)
-  -- checkStrArg(presence.joinSecret, 127, "presence.joinSecret", func, true)
-  -- checkStrArg(presence.spectateSecret, 127, "presence.spectateSecret", func, true)
-
-  -- checkIntArg(presence.instance, 8, "presence.instance", func, true)
+  checkStrArg(presence.match_secret, 127, "presence.match_secret", func, true)
+  checkStrArg(presence.join_secret, 127, "presence.join_secret", func, true)
+  checkStrArg(presence.spectate_secret, 127, "presence.spectate_secret", func, true)
 
   local app = referencesTable.app
   app.activities = app.core[0]:get_activity_manager()
