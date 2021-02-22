@@ -906,6 +906,7 @@ function discordGameSDK.clearPresence(referencesTable)
 
   local app = referencesTable.app
   app.activities:clear_activity(nil, nil)
+  referencesTable.running = false
   collectgarbage()
   collectgarbage()
   return referencesTable
