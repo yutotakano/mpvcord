@@ -12,6 +12,7 @@ These are some ideas of how to customise the script:
 | ----------- | ----------- |
 | Mostly default, with custom large image | ![Image](https://i.imgur.com/51PwuGe.png) |
 | Custom large image, custom 2nd line, custom 3rd line, custom time | ![Image](https://i.imgur.com/KW7e9YP.png) |
+| Potential for even more customisation using other scripts and APIs.<br>(Showing current radio programme with [mpv-radio-title-script](https://github.com/olivierlemoal/mpv-radio-title-script/)) | ![Image](https://i.imgur.com/y72ZUUP.png) |
 
 ## Installation
 
