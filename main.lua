@@ -9,17 +9,17 @@ local app
   Configure these as you wish. These will be overwritten if any
   config file exists at script-opts/mpvcord.conf, and even those
   are overwritten if any command-line arguments are passed, e.g.
-  --script-opts=mpvcord-activate=yes 
+  --script-opts=mpvcord-activate=yes
 
   periodic_timer: How often the script communicates with Game SDK.
                   Recommended 1 <= x <= 15.
-  playlist_info:  Whether to display the playlist information. 
+  playlist_info:  Whether to display the playlist information.
                   (yes | no)
-  loop_info:      Whether to display your loop status. 
+  loop_info:      Whether to display your loop status.
                   (yes | no)
-  mpv_version:    Whether to show the mpv version. 
+  mpv_version:    Whether to show the mpv version.
                   (yes | no)
-  active:         Whether to activate script on launch. 
+  active:         Whether to activate script on launch.
                   (yes | no)
   key_toggle:     Key to toggle script. Can also be set in input.conf.
 --]=====]
@@ -39,7 +39,7 @@ client_id = 798647747678568488LL
 
 --[=====[
   Setup.
-  Reads option files, sets keybinding, and initialises Discord. 
+  Reads option files, sets keybinding, and initialises Discord.
 --]=====]
 
 options.read_options(o)
@@ -92,6 +92,7 @@ local function main()
 
   -- Return early if discord game sdk doesn't need to run
   if o.active == "no" then
+    msg.verbose("Calling Game SDK...")
     discord_instance = gameSDK.clearPresence(discord_instance)
     return
   end
@@ -120,14 +121,14 @@ local function main()
   local pausedFC = mp.get_property_bool("paused-for-cache")
   local pause = mp.get_property_bool("pause")
   local play = coreIdle and false or true
-  
+
   local timeNow = os.time(os.date("*t"))
   local timeRemaining = os.time(os.date("*t", mp.get_property("playtime-remaining")))
   local timeUp = timeNow + timeRemaining
-  
+
   presence["start_time"] = nil
   presence["end_time"] = timeUp
-  
+
   if idle then
     presence["state"] = "(Idle)"
     presence["small_image"] = "player_stop"
@@ -148,7 +149,7 @@ local function main()
     presence["small_text"] = "Playing"
   end
 
-  
+
   if not idle then
     -- set `playlist_info`
     local playlist = ""
@@ -177,10 +178,10 @@ local function main()
     presence["small_text"] = ("%s%s%s"):format(presence["small_text"], playlist, loop)
   end
 
-  
+
   --[=====[
     Conditionals.
-    Here is where the customisability will shine! Set various presence values 
+    Here is where the customisability will shine! Set various presence values
     using the metadata available. See https://mpv.io/manual/master#property-list
     for properties you can use by mp.get_property()
 
@@ -192,13 +193,17 @@ local function main()
 
   local file_path = mp.get_property("path") -- URL, or file path
   local media_title = mp.get_property("media-title")
+  local chapter_title = mp.get_property("chapter-metadata/by-key/Title")
   local metadata_title = mp.get_property_native("metadata/by-key/Title")
   local metadata_artist = mp.get_property_native("metadata/by-key/Artist")
   local metadata_album = mp.get_property_native("metadata/by-key/Album")
-  
+
   presence["details"] = media_title
   if metadata_title ~= nil then
     presence["details"] = metadata_title
+  end
+  if chapter_title ~= nil then
+    presence["details"] = chapter_title
   end
 
   if file_path ~= nil then
@@ -211,16 +216,22 @@ local function main()
     if string.match(media_title, "Informatics") ~= nil then
       presence["large_image"] = "informatics_logo"
       presence["large_text"] = "UoE Informatics"
-    
+
     elseif string.match(media_title, "Star Wars") ~= nil then
       presence["large_image"] = "starwars"
       presence["large_text"] = "Star Wars"
-    
+
     elseif string.match(file_path, "r1%-01%.m3u8") ~= nil then
       presence["large_image"] = "radio"
-      presence["large_text"] = "Radio"
-      presence["details"] = "Listening to NHK R1"
-      presence["state"] = "" -- hide (Playing 1x) because it is unnecessary
+      presence["large_text"] = "Listening to NHK R1"
+      if media_title ~= "r1%-01%.m3u8" then
+        lines = {}
+        for s in media_title:gmatch("[^\r\n]+") do
+          table.insert(lines, s)
+        end
+        presence["details"] = lines[1] and lines[1] or ""
+        presence["state"] = lines[2] and lines[2] or ""
+      end
       presence["start_time"] = math.floor(startTime)
       presence["end_time"] = nil
 
@@ -228,15 +239,40 @@ local function main()
         or string.match(file_path, "youtu.be/([a-zA-Z0-9-_]+)&?.*$") ~= nil then
       presence["large_image"] = "youtube"
       presence["large_text"] = "YouTube"
-    
+
+    elseif string.match(file_path, "urn:bbc:pips:service:bbc_one") ~= nil then
+      presence["large_image"] = "bbc_one"
+      presence["large_text"] = "BBC One"
+      if media_title == "main.m3u8" then
+        presence["details"] = "Watching BBC One"
+        presence["state"] = "(likely for the Olympics)"
+      else
+        lines = {}
+        for s in media_title:gmatch("[^\r\n]+") do
+          table.insert(lines, s)
+        end
+        presence["details"] = lines[1] and lines[1] or ""
+        presence["state"] = lines[2] and lines[2] or ""
+      end
+      presence["start_time"] = math.floor(startTime)
+      presence["end_time"] = nil
+
     end
 
     if metadata_artist ~= nil then
       presence["state"] = ("by %s"):format(metadata_artist)
     end
-    
+
     if metadata_album ~= nil then
       presence["details"] = ("%s //\n(%s)"):format(presence["details"], metadata_album)
+    end
+
+    if chapter_title ~= nil
+      and (string.match(file_path, "www.youtube.com/watch%?v=([a-zA-Z0-9-_]+)&?.*$") ~= nil
+        or string.match(file_path, "youtu.be/([a-zA-Z0-9-_]+)&?.*$") ~= nil) then
+        -- Youtube, and with chapters.
+        presence["large_text"] = media_title
+
     end
   end
 
@@ -245,7 +281,8 @@ local function main()
   end
 
   -- set game activity
-  presence.details = presence.details:len() > 127 and presence.details:sub(1, 127) or presence.details
+  presence["details"] = presence["details"]:len() > 127 and presence["details"]:sub(1, 127) or presence["details"]
+  presence["state"] = presence["state"]:len() > 127 and presence["state"]:sub(1, 127) or presence["state"]
   msg.verbose("Calling Game SDK...")
   discord_instance = gameSDK.updatePresence(discord_instance, presence)
 end

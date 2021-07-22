@@ -797,7 +797,7 @@ function discordGameSDK.initialize(clientId)
 end
 
 function discordGameSDK.shutdown(app)
-  app.core.destroy()
+  app.core:destroy()
 end
 
 function discordGameSDK.runCallbacks(core)
@@ -808,22 +808,17 @@ local updateActivityCallback = ffi.cast("callbackPtr", function(callback_data, d
   if discord_result == libGameSDK.DiscordResult_Ok then
     msg.verbose("Successfully updated Discord activity")
   else 
-    msg.verbose("Failed updating Discord activity: " .. discord_result)
+    msg.verbose("Failed updating Discord activity: " .. tostring(discord_result))
   end
 end)
 
-function discordGameSDK.updateActivity(activities, activity, core)
-  activities.update_activity(activities, activity, core, updateActivityCallback)
-end
-
--- http://luajit.org/ext_ffi_semantics.html#callback :
--- It is by default not allowed for C to callback into Lua, when
--- Lua had originally called into C. jit.off() allows it, so any
--- function that calls a callback needs to be wrapped in it.
-jit.off(discordGameSDK.updateActivity)
-jit.off(discordGameSDK.updatePresence)
-jit.off(discordGameSDK.runCallbacks)
-jit.off(discordGameSDK.initialize)
+local clearActivityCallback = ffi.cast("callbackPtr", function(callback_data, discord_result)
+  if discord_result == libGameSDK.DiscordResult_Ok then
+    msg.verbose("Successfully cleared Discord activity")
+  else 
+    msg.verbose("Failed clearing Discord activity: " .. tostring(discord_result))
+  end
+end)
 
 function discordGameSDK.updatePresence(referencesTable, presence)
   -- If Discord isn't running, try initialising.
@@ -883,8 +878,8 @@ function discordGameSDK.updatePresence(referencesTable, presence)
   activityPtr[0].secrets.match = presence.match_secret or ""
   activityPtr[0].secrets.join = presence.join_secret or ""
   activityPtr[0].secrets.spectate = presence.spectate_secret or ""
-    
-  discordGameSDK.updateActivity(app.activities, activityPtr, app.core)
+  
+  app.activities:update_activity(activityPtr, app.core, updateActivityCallback)
   x = discordGameSDK.runCallbacks(app.core)
   running = x == libGameSDK.DiscordResult_Ok
 
@@ -904,19 +899,36 @@ function discordGameSDK.clearPresence(referencesTable)
   end
 
   local app = referencesTable.app
-  app.activities:clear_activity(nil, nil)
-  referencesTable.running = false
+  app.activities = app.core[0]:get_activity_manager()
+  app.application = app.core[0]:get_application_manager()
+  app.users = app.core[0]:get_user_manager()
+
+  app.activities:clear_activity(app.core, clearActivityCallback)
+  x = discordGameSDK.runCallbacks(app.core)
+  running = x == libGameSDK.DiscordResult_Ok
+
   collectgarbage()
   collectgarbage()
+  referencesTable.running = running
   return referencesTable
 end
 
 -- Attach a finaliser to run when discordGameSDK is garbage
 -- collected. This happens when mpv quits.
-getmetatable(discordGameSDK.gcDummy).__gc = function()
+getmetatable(discordGameSDK.gcDummy).__gc = function ()
   discordGameSDK.shutdown()
   updateActivityCallback:free()
+  clearActivityCallback:free()
   loggerCallback:free()
 end
+
+-- http://luajit.org/ext_ffi_semantics.html#callback :
+-- It is by default not allowed for C to callback into Lua, when
+-- Lua had originally called into C. jit.off() allows it, so any
+-- function that calls a callback needs to be wrapped in it.
+jit.off(discordGameSDK.updatePresence)
+jit.off(discordGameSDK.clearPresence)
+jit.off(discordGameSDK.runCallbacks)
+jit.off(discordGameSDK.initialize)
 
 return discordGameSDK
